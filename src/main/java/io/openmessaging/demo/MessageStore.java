@@ -53,7 +53,7 @@ public class MessageStore {
     public synchronized void putMessage(String bucket, Message message) {
 
         if (messageBuckets.get(bucket) == null) {
-            LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<>();
+            LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<>(1024);
             messageBuckets.put(bucket, queue);
             WriteMessage2DiskTask writeMessage2DiskTask = new WriteMessage2DiskTask(parent, bucket, queue);
             executor.execute(writeMessage2DiskTask);
@@ -144,14 +144,18 @@ public class MessageStore {
     public void putMessageToTopic(String topic, Message message) {
 
         if (messageBuckets.get(topic) == null) {
-            LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<>();
+            LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<>(1024);
             messageBuckets.put(topic, queue);
             WriteTopicTask writeTopicTask = new WriteTopicTask(parent, topic, queue);
             executor.execute(writeTopicTask);
         }
 
         BlockingQueue<Message> queue = messageBuckets.get(topic);
-        queue.offer(message);
+        try {
+            queue.put(message);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -164,14 +168,18 @@ public class MessageStore {
     public void putMessageToQueue(String queueName, Message message) {
 
         if (messageBuckets.get(queueName) == null) {
-            LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<>();
+            LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<>(1024);
             messageBuckets.put(queueName, queue);
             WriteQueueTask writeQueueTask = new WriteQueueTask(parent, queueName, queue);
             executor.execute(writeQueueTask);
         }
 
         BlockingQueue<Message> queue = messageBuckets.get(queueName);
-        queue.offer(message);
+        try {
+            queue.put(message);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 }
