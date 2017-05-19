@@ -17,8 +17,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class LimitBytesBlockingQueue<E extends DefaultBytesMessage> extends AbstractQueue<E>
         implements BlockingQueue<E> {
 
-    //20MB
-    public static final int MAX_BYTES_COUNT = 10 * 1024 * 1024;
+    //15MB
+    public static final int MAX_BYTES_COUNT = 15 * 1024 * 1024;
 
     /**
      * Linked list node class
