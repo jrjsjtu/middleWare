@@ -13,14 +13,14 @@ public class WriteMessage2DiskTask implements Runnable {
 
     private String parent;
     private String fileName;
-    private BlockingQueue<Message> queue;
+    private LimitBytesBlockingQueue<DefaultBytesMessage> queue;
 
     private MessageEncoder messageEncoder = new PBMessageEncoder();
 
     private File file;
     private FileOutputStream out;
 
-    public WriteMessage2DiskTask(String parent, String fileName, BlockingQueue<Message> queue) {
+    public WriteMessage2DiskTask(String parent, String fileName, LimitBytesBlockingQueue<DefaultBytesMessage> queue) {
         this.parent = parent;
         this.fileName = fileName;
         this.queue = queue;
@@ -28,7 +28,6 @@ public class WriteMessage2DiskTask implements Runnable {
 
     @Override
     public void run() {
-
 
         try {
 
@@ -46,7 +45,7 @@ public class WriteMessage2DiskTask implements Runnable {
                 out = new FileOutputStream(file, true);
 
                 try {
-                    Message message = null;
+                    DefaultBytesMessage message = null;
                     byte[] data = null;
                     while ((message = queue.take()) != null) {
                         data = messageEncoder.message2Bytes((DefaultBytesMessage) message);

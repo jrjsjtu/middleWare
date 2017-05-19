@@ -48,13 +48,14 @@ public class DefaultProducer implements Producer {
             throw new ClientOMSException(String.format("Queue:%s Topic:%s should put one and only one", true, queue));
         }
 
+        //序列化消息
+        ((DefaultBytesMessage) message).pbSerialize();
+
         if (topic != null) {
             messageStore.putMessageToTopic(topic, message);
         } else {
             messageStore.putMessageToQueue(queue, message);
         }
-
-//        messageStore.putMessage(topic != null ? topic : queue, message);
 
     }
 

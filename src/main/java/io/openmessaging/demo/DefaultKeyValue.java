@@ -212,4 +212,8 @@ public class DefaultKeyValue implements KeyValue {
         }
         return result;
     }
+
+    public void clear() {
+        kvs.clear();
+    }
 }

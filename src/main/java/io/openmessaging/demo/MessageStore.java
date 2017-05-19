@@ -4,6 +4,7 @@ import io.openmessaging.Message;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -45,23 +46,6 @@ public class MessageStore {
         }
 
         return INSTANCE;
-    }
-
-    //关联topic或queue名与BlockingQueue
-    private Map<String, BlockingQueue<Message>> messageBuckets = new HashMap<>();
-
-    public synchronized void putMessage(String bucket, Message message) {
-
-        if (messageBuckets.get(bucket) == null) {
-            LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<>(1024);
-            messageBuckets.put(bucket, queue);
-            WriteMessage2DiskTask writeMessage2DiskTask = new WriteMessage2DiskTask(parent, bucket, queue);
-            executor.execute(writeMessage2DiskTask);
-        }
-
-        BlockingQueue<Message> queue = messageBuckets.get(bucket);
-        queue.offer(message);
-
     }
 
     //关联topic或queue与BlockingQueue
@@ -128,12 +112,12 @@ public class MessageStore {
     /**
      * 关联Topic与其队列
      */
-    private Map<String, BlockingQueue<Message>> storeMsg2TopicMap = new HashMap<>();
+    private Map<String, LimitBytesBlockingQueue<DefaultBytesMessage>> storeMsg2TopicMap = new HashMap<>();
 
     /**
      * 关联Queue与其队列
      */
-    private Map<String, BlockingQueue<Message>> storeMsg2QueueMap = new HashMap<>();
+    private Map<String, LimitBytesBlockingQueue<DefaultBytesMessage>> storeMsg2QueueMap = new HashMap<>();
 
     /**
      * 将消息存储到Topic
@@ -143,16 +127,17 @@ public class MessageStore {
      */
     public void putMessageToTopic(String topic, Message message) {
 
-        if (messageBuckets.get(topic) == null) {
-            LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<>(1024);
-            messageBuckets.put(topic, queue);
+
+        if (storeMsg2TopicMap.get(topic) == null) {
+            LimitBytesBlockingQueue<DefaultBytesMessage> queue = new LimitBytesBlockingQueue<>();
+            storeMsg2TopicMap.put(topic, queue);
             WriteTopicTask writeTopicTask = new WriteTopicTask(parent, topic, queue);
             executor.execute(writeTopicTask);
         }
 
-        BlockingQueue<Message> queue = messageBuckets.get(topic);
+        LimitBytesBlockingQueue<DefaultBytesMessage> queue = storeMsg2TopicMap.get(topic);
         try {
-            queue.put(message);
+            queue.put((DefaultBytesMessage) message);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
@@ -167,16 +152,16 @@ public class MessageStore {
      */
     public void putMessageToQueue(String queueName, Message message) {
 
-        if (messageBuckets.get(queueName) == null) {
-            LinkedBlockingQueue<Message> queue = new LinkedBlockingQueue<>(1024);
-            messageBuckets.put(queueName, queue);
+        if (storeMsg2QueueMap.get(queueName) == null) {
+            LimitBytesBlockingQueue<DefaultBytesMessage> queue = new LimitBytesBlockingQueue<>();
+            storeMsg2QueueMap.put(queueName, queue);
             WriteQueueTask writeQueueTask = new WriteQueueTask(parent, queueName, queue);
             executor.execute(writeQueueTask);
         }
 
-        BlockingQueue<Message> queue = messageBuckets.get(queueName);
+        LimitBytesBlockingQueue<DefaultBytesMessage> queue = storeMsg2QueueMap.get(queueName);
         try {
-            queue.put(message);
+            queue.put((DefaultBytesMessage) message);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

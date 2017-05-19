@@ -8,15 +8,10 @@ import java.util.Arrays;
 
 public class DefaultBytesMessage implements BytesMessage {
 
-    private static final String KEY_VALUE_SPLT = ":";
-    private static final String ENTRY_VALUE = " ";
+    private static MessageEncoder encoder = new PBMessageEncoder();
 
     private KeyValue headers = new DefaultKeyValue();
     private KeyValue properties;
-
-    private StringBuilder headersLine = new StringBuilder();
-    private StringBuilder propertiesLine = new StringBuilder();
-
     private byte[] body;
 
     /**
@@ -32,14 +27,6 @@ public class DefaultBytesMessage implements BytesMessage {
         this.headers = headers;
     }
 
-    public String getHeadersLine() {
-        return headersLine.toString();
-    }
-
-    public String getPropertiesLine() {
-        return propertiesLine.toString();
-    }
-
     @Override
     public byte[] getBody() {
         return body;
@@ -47,31 +34,7 @@ public class DefaultBytesMessage implements BytesMessage {
 
     public void setProperties(KeyValue properties) {
         this.properties = properties;
-        if (properties != null)
-            this.propertiesLine = initPropertiesLine((DefaultKeyValue) properties);
     }
-
-    public StringBuilder initPropertiesLine(DefaultKeyValue defaultKeyValue) {
-
-        StringBuilder sb = new StringBuilder();
-        DefaultKeyValue.NewValue newValue = null;
-
-        for (String key : defaultKeyValue.keySet()) {
-            newValue = defaultKeyValue.getNewValue(key);
-            if (newValue == null) {
-                continue;
-            } else {
-                sb.append(key + KEY_VALUE_SPLT + newValue.value + KEY_VALUE_SPLT + newValue.type).append(ENTRY_VALUE);
-            }
-        }
-
-        if (sb.length() > 0) {
-            sb.deleteCharAt(sb.length() - 1);
-        }
-
-        return sb;
-    }
-
 
     @Override
     public BytesMessage setBody(byte[] body) {
@@ -92,28 +55,24 @@ public class DefaultBytesMessage implements BytesMessage {
     @Override
     public Message putHeaders(String key, int value) {
         headers.put(key, value);
-        headersLine.append(key + KEY_VALUE_SPLT + value + KEY_VALUE_SPLT + 0);
         return this;
     }
 
     @Override
     public Message putHeaders(String key, long value) {
         headers.put(key, value);
-        headersLine.append(key + KEY_VALUE_SPLT + value + KEY_VALUE_SPLT + 1);
         return this;
     }
 
     @Override
     public Message putHeaders(String key, double value) {
         headers.put(key, value);
-        headersLine.append(key + KEY_VALUE_SPLT + value + KEY_VALUE_SPLT + 2);
         return this;
     }
 
     @Override
     public Message putHeaders(String key, String value) {
         headers.put(key, value);
-        headersLine.append(key + KEY_VALUE_SPLT + value + KEY_VALUE_SPLT + 3);
         return this;
     }
 
@@ -121,7 +80,6 @@ public class DefaultBytesMessage implements BytesMessage {
     public Message putProperties(String key, int value) {
         if (properties == null) properties = new DefaultKeyValue();
         properties.put(key, value);
-        propertiesLine.append(key + KEY_VALUE_SPLT + value + KEY_VALUE_SPLT + 0);
         return this;
     }
 
@@ -129,7 +87,6 @@ public class DefaultBytesMessage implements BytesMessage {
     public Message putProperties(String key, long value) {
         if (properties == null) properties = new DefaultKeyValue();
         properties.put(key, value);
-        propertiesLine.append(key + KEY_VALUE_SPLT + value + KEY_VALUE_SPLT + 1);
         return this;
     }
 
@@ -137,8 +94,6 @@ public class DefaultBytesMessage implements BytesMessage {
     public Message putProperties(String key, double value) {
         if (properties == null) properties = new DefaultKeyValue();
         properties.put(key, value);
-        propertiesLine.append(key + KEY_VALUE_SPLT + value + KEY_VALUE_SPLT + 2);
-
         return this;
     }
 
@@ -146,7 +101,6 @@ public class DefaultBytesMessage implements BytesMessage {
     public Message putProperties(String key, String value) {
         if (properties == null) properties = new DefaultKeyValue();
         properties.put(key, value);
-        propertiesLine.append(key + KEY_VALUE_SPLT + value + KEY_VALUE_SPLT + 3);
         return this;
     }
 
@@ -186,5 +140,39 @@ public class DefaultBytesMessage implements BytesMessage {
 
     public void setByteCount(int byteCount) {
         this.byteCount = byteCount;
+    }
+
+
+    byte[] serializeBytes = null;
+
+    /**
+     * 序列化自己
+     *
+     * @return
+     */
+    public byte[] pbSerialize() {
+        serializeBytes = encoder.message2Bytes(this);
+        byteCount = serializeBytes.length;
+        return serializeBytes;
+    }
+
+    public byte[] getSerializeBytes() {
+        return serializeBytes;
+    }
+
+    public void setSerializeBytes(byte[] serializeBytes) {
+        this.serializeBytes = serializeBytes;
+    }
+
+    /**
+     * 清空信息
+     */
+    public void clear() {
+        ((DefaultKeyValue) headers).clear();
+        if (properties != null)
+            ((DefaultKeyValue) properties).clear();
+        body = null;
+        serializeBytes = null;
+        byteCount = 0;
     }
 }

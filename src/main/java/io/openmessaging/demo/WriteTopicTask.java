@@ -15,7 +15,7 @@ public class WriteTopicTask implements Runnable {
 
     private String parent;
     private String fileName;
-    private BlockingQueue<Message> queue;
+    private LimitBytesBlockingQueue<DefaultBytesMessage> queue;
 
     private MessageEncoder messageEncoder = new PBMessageEncoder();
 
@@ -26,7 +26,7 @@ public class WriteTopicTask implements Runnable {
     private RandomAccessFile indexFile;
     private FileChannel indexChannel;
 
-    public WriteTopicTask(String parent, String fileName, BlockingQueue<Message> queue) {
+    public WriteTopicTask(String parent, String fileName, LimitBytesBlockingQueue<DefaultBytesMessage> queue) {
         this.parent = parent;
         this.fileName = fileName;
         this.queue = queue;
@@ -57,10 +57,10 @@ public class WriteTopicTask implements Runnable {
                 ByteBuffer buffer = ByteBuffer.allocate(8);
                 int position = 0, size = 0;
                 try {
-                    Message message = null;
+                    DefaultBytesMessage message = null;
                     byte[] data = null;
                     while ((message = queue.take()) != null) {
-                        data = messageEncoder.message2Bytes((DefaultBytesMessage) message);
+                        data = message.getSerializeBytes();
 
                         //写索引
                         size = data.length;
@@ -73,6 +73,10 @@ public class WriteTopicTask implements Runnable {
 
                         //写消息
                         out.write(data);
+
+                        //回收Message
+                        MessagePool.recycle((DefaultBytesMessage) message);
+
                     }
 
 
