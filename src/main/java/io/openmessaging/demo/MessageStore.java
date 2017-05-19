@@ -125,8 +125,7 @@ public class MessageStore {
      * @param topic
      * @param message
      */
-    public void putMessageToTopic(String topic, Message message) {
-
+    public synchronized void putMessageToTopic(String topic, Message message) {
 
         if (storeMsg2TopicMap.get(topic) == null) {
             LimitBytesBlockingQueue<DefaultBytesMessage> queue = new LimitBytesBlockingQueue<>();
@@ -150,7 +149,7 @@ public class MessageStore {
      * @param queueName
      * @param message
      */
-    public void putMessageToQueue(String queueName, Message message) {
+    public synchronized void putMessageToQueue(String queueName, Message message) {
 
         if (storeMsg2QueueMap.get(queueName) == null) {
             LimitBytesBlockingQueue<DefaultBytesMessage> queue = new LimitBytesBlockingQueue<>();
