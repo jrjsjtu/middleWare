@@ -18,7 +18,7 @@ public class LimitBytesBlockingQueue<E extends DefaultBytesMessage> extends Abst
         implements BlockingQueue<E> {
 
     //20MB
-    public static final int MAX_BYTES_COUNT = 20 * 1024 * 1024;
+    public static final int MAX_BYTES_COUNT = 10 * 1024 * 1024;
 
     /**
      * Linked list node class

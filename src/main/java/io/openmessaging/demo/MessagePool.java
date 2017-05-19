@@ -7,7 +7,7 @@ import java.util.LinkedList;
  */
 public class MessagePool {
 
-    static final long MAX_SIZE = 30 * 1024 * 1024; //20MB
+    static final long MAX_SIZE = 20 * 1024 * 1024; //20MB
 
     static LinkedList<DefaultBytesMessage> messageLinkedList = new LinkedList<>();
 
