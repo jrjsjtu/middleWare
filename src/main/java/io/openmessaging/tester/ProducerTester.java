@@ -46,7 +46,7 @@ public class ProducerTester {
                 logger.error("please check the package name and class name:", e);
             }
             //init offsets
-            for (int i = 0; i < 100; i++) {
+            for (int i = 0; i < 10; i++) {
                 offsets.put("TOPIC_" + i, 0);
                 offsets.put("QUEUE_" + i, 0);
             }
@@ -59,12 +59,12 @@ public class ProducerTester {
                 try {
                     String queueOrTopic;
                     Message message = null;
-                    if (sendNum % 100 == 0) {
-                        queueOrTopic = "QUEUE_" + random.nextInt(100);
+                    if (sendNum % 10 == 0) {
+                        queueOrTopic = "QUEUE_" + random.nextInt(10);
                         message = producer.createBytesMessageToQueue(queueOrTopic, (label + "_" + offsets.get(queueOrTopic)).getBytes());
 
                     } else {
-                        queueOrTopic = "TOPIC_" + random.nextInt(100);
+                        queueOrTopic = "TOPIC_" + random.nextInt(10);
                         message = producer.createBytesMessageToTopic(queueOrTopic, (label + "_" + offsets.get(queueOrTopic)).getBytes());
 
                     }

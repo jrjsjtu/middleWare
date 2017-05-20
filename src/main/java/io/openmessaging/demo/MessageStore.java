@@ -125,13 +125,17 @@ public class MessageStore {
      * @param topic
      * @param message
      */
-    public synchronized void putMessageToTopic(String topic, Message message) {
+    public void putMessageToTopic(String topic, Message message) {
 
         if (storeMsg2TopicMap.get(topic) == null) {
-            LimitBytesBlockingQueue<DefaultBytesMessage> queue = new LimitBytesBlockingQueue<>();
-            storeMsg2TopicMap.put(topic, queue);
-            WriteTopicTask writeTopicTask = new WriteTopicTask(parent, topic, queue);
-            executor.execute(writeTopicTask);
+            synchronized (this) {
+                if (storeMsg2TopicMap.get(topic) == null) {
+                    LimitBytesBlockingQueue<DefaultBytesMessage> queue = new LimitBytesBlockingQueue<>();
+                    storeMsg2TopicMap.put(topic, queue);
+                    WriteTopicTask writeTopicTask = new WriteTopicTask(parent, topic, queue);
+                    executor.execute(writeTopicTask);
+                }
+            }
         }
 
         LimitBytesBlockingQueue<DefaultBytesMessage> queue = storeMsg2TopicMap.get(topic);
@@ -149,13 +153,17 @@ public class MessageStore {
      * @param queueName
      * @param message
      */
-    public synchronized void putMessageToQueue(String queueName, Message message) {
+    public void putMessageToQueue(String queueName, Message message) {
 
         if (storeMsg2QueueMap.get(queueName) == null) {
-            LimitBytesBlockingQueue<DefaultBytesMessage> queue = new LimitBytesBlockingQueue<>();
-            storeMsg2QueueMap.put(queueName, queue);
-            WriteQueueTask writeQueueTask = new WriteQueueTask(parent, queueName, queue);
-            executor.execute(writeQueueTask);
+            synchronized (this) {
+                if (storeMsg2QueueMap.get(queueName) == null) {
+                    LimitBytesBlockingQueue<DefaultBytesMessage> queue = new LimitBytesBlockingQueue<>();
+                    storeMsg2QueueMap.put(queueName, queue);
+                    WriteQueueTask writeQueueTask = new WriteQueueTask(parent, queueName, queue);
+                    executor.execute(writeQueueTask);
+                }
+            }
         }
 
         LimitBytesBlockingQueue<DefaultBytesMessage> queue = storeMsg2QueueMap.get(queueName);
@@ -164,6 +172,9 @@ public class MessageStore {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-
     }
+
+
+
+
 }
