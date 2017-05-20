@@ -18,12 +18,12 @@ public class Constant {
     /**
      * 消息回收池的大小，50MB
      */
-    public static final int MESSAGE_POOL_SIZE = 50 * 1024 * 1024;
+    public static final int MESSAGE_POOL_SIZE = 30 * 1024 * 1024;
 
     /**
      * 每个阻塞队列的最大字节数，15MB
      */
-    public static final int MAX_BYTES_COUNT = 15 * 1024 * 1204;
+    public static final int MAX_BYTES_COUNT = 10 * 1024 * 1204;
 
     /**
      * 每页大小，4K

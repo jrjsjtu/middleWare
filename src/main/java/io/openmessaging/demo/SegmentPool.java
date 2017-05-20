@@ -20,7 +20,7 @@ package io.openmessaging.demo;
  */
 final class SegmentPool {
 
-    static final long MAX_SIZE = 64 * 1024 * 1024; // 64MB
+    static final long MAX_SIZE = 40 * 1024 * 1024; // 64MB
 
     static Segment next;
 
