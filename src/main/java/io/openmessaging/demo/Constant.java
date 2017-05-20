@@ -18,7 +18,7 @@ public class Constant {
     /**
      * 消息回收池的大小，30MB
      */
-    public static final int MESSAGE_POOL_SIZE = 100 * 1024 * 1024;
+    public static final int MESSAGE_POOL_SIZE = 50 * 1024 * 1024;
 
     /**
      * 每个阻塞队列的最大字节数，15MB
@@ -28,5 +28,5 @@ public class Constant {
     /**
      * 每页大小，4K
      */
-    public static final int PAGE_SIZE = 4 * 1024;
+    public static final int PAGE_SIZE = 8 * 1024;
 }
