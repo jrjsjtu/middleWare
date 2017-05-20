@@ -52,40 +52,25 @@ public class PBMessageEncoder implements MessageEncoder {
     public static final byte KV_STRING_TYPE = 19;
 
     @Override
-    public byte[] message2Bytes(DefaultBytesMessage message) {
+    public Buffer message2Bytes(DefaultBytesMessage message) {
+
+        Buffer buffer = new Buffer();
 
         DefaultKeyValue headers = (DefaultKeyValue) message.headers();
         DefaultKeyValue properties = (DefaultKeyValue) message.properties();
         byte[] body = message.getBody();
-
-        int totalSize = 0;
-        List<ByteString> list = new LinkedList<>();
         //消息Header部分
-        ByteString byteString = pbEncodeKeyValue(headers, 1);
-        totalSize += byteString.size();
-        list.add(byteString);
+        pbEncodeKeyValue(buffer, headers, 1);
 
         //消息Properties部分
         if (properties != null) {
-            byteString = pbEncodeKeyValue(properties, 2);
-            totalSize += byteString.size();
-            list.add(pbEncodeKeyValue(properties, 2));
+            pbEncodeKeyValue(buffer, properties, 2);
         }
 
         //消息主体部分
-        byteString = pbEncodeMsgBody(body);
-        totalSize += byteString.size();
-        list.add(pbEncodeMsgBody(body));
+        pbEncodeMsgBody(buffer, body);
 
-        byte[] encodeBytes = new byte[totalSize];
-        int pos = 0;
-        for (ByteString bs : list) {
-            for (byte b : bs) {
-                encodeBytes[pos++] = b;
-            }
-        }
-
-        return encodeBytes;
+        return buffer;
     }
 
     /**
@@ -93,59 +78,54 @@ public class PBMessageEncoder implements MessageEncoder {
      *
      * @return
      */
-    private ByteString pbEncodeMsgBody(byte[] body) {
-        ByteString byteString = new ByteString();
+    private void pbEncodeMsgBody(Buffer buffer, byte[] body) {
         //添加body TAG
-        byteString.add((byte) 28);
+        buffer.writeByte((byte) 28);
         //添加body
-        byteString.add(PBUtil.byteArray2Bytes(body));
-        return byteString;
+        buffer.write(body);
     }
 
 
     /**
      * 编码Header和Properties
      *
+     * @param buffer
      * @param keyValue
      * @param tag
      * @return
      */
-    private ByteString pbEncodeKeyValue(DefaultKeyValue keyValue, int tag) {
+    private void pbEncodeKeyValue(Buffer buffer, DefaultKeyValue keyValue, int tag) {
 
-        ByteString byteString = new ByteString();
         //添加类型和TAG
         byte typeAndTag = (byte) ((tag << 3) + 5);
-        byteString.add(typeAndTag);
+        buffer.writeByte(typeAndTag);
         //添加KV消息个数
         int kvMsgSize = keyValue.keySet().size();
         for (byte b : PBUtil.int2Bytes(kvMsgSize))
-            byteString.add(b);
+            buffer.writeByte(b);
 
         //一条K-V对的序列化后的字节
         for (String key : keyValue.keySet()) {
-            for (byte b : pbEncodeKVMessage(key, keyValue.getNewValue(key)))
-                byteString.add(b);
+            pbEncodeKVMessage(buffer, key, keyValue.getNewValue(key));
         }
-
-        return byteString;
     }
 
     /**
      * 将KV消息编码成ByteString
      *
+     * @param buffer
      * @param key
      * @param newValue
      * @return
      */
-    private ByteString pbEncodeKVMessage(String key, DefaultKeyValue.NewValue newValue) {
+    private void pbEncodeKVMessage(Buffer buffer, String key, DefaultKeyValue.NewValue newValue) {
 
         ByteString byteString = new ByteString();
 
         //编码Key=1
-        byteString.add((byte) 11);
+        buffer.writeByte((byte) 11);
         //编码key
-        for (byte b : PBUtil.string2Bytes(key))
-            byteString.add(b);
+        PBUtil.string2Bytes(buffer, key);
 
         //编码newValue
         int type = newValue.type;
@@ -153,40 +133,37 @@ public class PBMessageEncoder implements MessageEncoder {
 
             case 0:
 
-                byteString.add(KV_INT_TYPE);
+                buffer.writeByte(KV_INT_TYPE);
                 for (byte b : PBUtil.int2Bytes(newValue.intValue))
-                    byteString.add(b);
+                    buffer.writeByte(b);
 
                 break;
 
             case 1:
 
-                byteString.add(KV_LONG_TYPE);
+                buffer.writeByte(KV_LONG_TYPE);
                 for (byte b : PBUtil.long2Bytes(newValue.longValue))
-                    byteString.add(b);
+                    buffer.writeByte(b);
 
                 break;
 
             case 2:
 
-                byteString.add(KV_DOUBLE_TYPE);
+                buffer.writeByte(KV_DOUBLE_TYPE);
                 for (byte b : PBUtil.double2Bytes(newValue.doubleValue))
-                    byteString.add(b);
+                    buffer.writeByte(b);
 
                 break;
 
             case 3:
 
-
-                byteString.add(KV_STRING_TYPE);
-                for (byte b : PBUtil.string2Bytes(newValue.stringValue))
-                    byteString.add(b);
+                buffer.writeByte(KV_STRING_TYPE);
+                PBUtil.string2Bytes(buffer, newValue.stringValue);
 
                 break;
 
         }
 
-        return byteString;
     }
 
 

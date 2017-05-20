@@ -5,6 +5,6 @@ package io.openmessaging.demo;
  */
 public interface MessageEncoder {
 
-    byte[] message2Bytes(DefaultBytesMessage message);
+    Buffer message2Bytes(DefaultBytesMessage message);
 
 }

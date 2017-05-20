@@ -143,25 +143,25 @@ public class DefaultBytesMessage implements BytesMessage {
     }
 
 
-    byte[] serializeBytes = null;
+    private Buffer seializeBytes;
 
     /**
      * 序列化自己
      *
      * @return
      */
-    public byte[] pbSerialize() {
-        serializeBytes = encoder.message2Bytes(this);
-        byteCount = serializeBytes.length;
-        return serializeBytes;
+    public Buffer pbSerialize() {
+        seializeBytes = encoder.message2Bytes(this);
+        byteCount = (int) seializeBytes.size();
+        return seializeBytes;
     }
 
-    public byte[] getSerializeBytes() {
-        return serializeBytes;
+    public Buffer getSerializeBytes() {
+        return seializeBytes;
     }
 
-    public void setSerializeBytes(byte[] serializeBytes) {
-        this.serializeBytes = serializeBytes;
+    public void setSerializeBytes(Buffer seializeBytes) {
+        this.seializeBytes = seializeBytes;
     }
 
     /**
@@ -172,7 +172,7 @@ public class DefaultBytesMessage implements BytesMessage {
         if (properties != null)
             ((DefaultKeyValue) properties).clear();
         body = null;
-        serializeBytes = null;
+        seializeBytes.clear();
         byteCount = 0;
     }
 }

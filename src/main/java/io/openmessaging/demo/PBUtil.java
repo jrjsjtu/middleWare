@@ -1,6 +1,7 @@
 package io.openmessaging.demo;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 
 /**
  * Created by Xingfeng on 2017-05-16.
@@ -97,27 +98,19 @@ public class PBUtil {
     /**
      * 将string转成ByteString
      *
+     * @param buffer
      * @param value
      * @return
      */
-    public static ByteString string2Bytes(String value) {
+    public static void string2Bytes(Buffer buffer, String value) {
 
-        ByteString byteString = new ByteString();
         //添加尺寸
         int size = value.length();
-        ByteString sizeBytes = int2Bytes(size);
-        byteString.add(sizeBytes);
+        for (byte b : int2Bytes(size))
+            buffer.writeByte(b);
 
         //添加String主体部分
-        try {
-            byte[] body = value.getBytes(UTF_8);
-            byteString.addAll(body);
-        } catch (UnsupportedEncodingException e) {
-            e.printStackTrace();
-        }
-
-        return byteString;
-
+        buffer.writeString(value, Util.UTF_8);
     }
 
     public static ByteString byteArray2Bytes(byte[] body) {

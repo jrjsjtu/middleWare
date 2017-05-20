@@ -37,17 +37,16 @@ public class WriteTopicTask implements Runnable {
             MappedByteBuffer buffer = buffer = fileChannel.map(FileChannel.MapMode.READ_WRITE, offset, Constant.PAGE_SIZE);
             try {
                 DefaultBytesMessage message = null;
-                byte[] data = null;
+                Buffer data = null;
                 while ((message = queue.take()) != null) {
                     data = message.getSerializeBytes();
 
-                    int start = 0;
                     while (true) {
 
-                        while (start < data.length && buffer.hasRemaining()) {
-                            buffer.put(data[start++]);
+                        while (!data.exhausted() && buffer.hasRemaining()) {
+                            buffer.put(data.readByte());
                         }
-                        if (start >= data.length) {
+                        if (data.exhausted()) {
                             break;
                         }
                         //Buffer满了
@@ -60,9 +59,6 @@ public class WriteTopicTask implements Runnable {
 
                     //回收Message
                     MessagePool.recycle(message);
-
-                    Thread.yield();
-
 
                 }
 

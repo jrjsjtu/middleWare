@@ -1,57 +1,64 @@
+/*
+ * Copyright (C) 2014 Square, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package io.openmessaging.demo;
 
 /**
- * Created by Xingfeng on 2017-05-20.
+ * Segment为循环队列，在Segment池中为单链表结构
  */
 final class Segment {
-    /** The size of all segments in bytes. */
-    static final int SIZE = 8192;
 
-    /** Segments will be shared when doing so avoids {@code arraycopy()} of this many bytes. */
-    static final int SHARE_MINIMUM = 1024;
+    /**
+     * 每一个Segment大小为256字节
+     */
+    static final int SIZE = 256;
 
     final byte[] data;
 
-    /** The next byte of application data byte to read in this segment. */
+    //下一个读的位置
     int pos;
 
-    /** The first byte of available data ready to be written to. */
+    //下一个写的位置
     int limit;
 
-    /** True if other segments or byte strings use the same byte array. */
-    boolean shared;
-
-    /** True if this segment owns the byte array and can append to it, extending {@code limit}. */
-    boolean owner;
-
-    /** Next segment in a linked or circularly-linked list. */
+    /**
+     * 下一个Segment
+     */
     Segment next;
 
-    /** Previous segment in a circularly-linked list. */
+    /**
+     * 在循环链表中的前一个Segment
+     */
     Segment prev;
 
     Segment() {
         this.data = new byte[SIZE];
-        this.owner = true;
-        this.shared = false;
     }
 
     Segment(Segment shareFrom) {
         this(shareFrom.data, shareFrom.pos, shareFrom.limit);
-        shareFrom.shared = true;
     }
 
     Segment(byte[] data, int pos, int limit) {
         this.data = data;
         this.pos = pos;
         this.limit = limit;
-        this.owner = false;
-        this.shared = true;
     }
 
     /**
-     * Removes this segment of a circularly-linked list and returns its successor.
-     * Returns null if the list is now empty.
+     * 删除循环链表中的当前Segment，返回它的后继节点；如果链表为空，都返回null
      */
     public Segment pop() {
         Segment result = next != this ? next : null;
@@ -63,8 +70,7 @@ final class Segment {
     }
 
     /**
-     * Appends {@code segment} after this segment in the circularly-linked list.
-     * Returns the pushed segment.
+     * 将一个Segment添加到循环队列的尾部，并返回该Segment
      */
     public Segment push(Segment segment) {
         segment.prev = this;
@@ -75,29 +81,14 @@ final class Segment {
     }
 
     /**
-     * Splits this head of a circularly-linked list into two segments. The first
-     * segment contains the data in {@code [pos..pos+byteCount)}. The second
-     * segment contains the data in {@code [pos+byteCount..limit)}. This can be
-     * useful when moving partial segments from one buffer to another.
-     *
-     * <p>Returns the new head of the circularly-linked list.
+     * 将循环队列的头Segment分隔成两个Segment，第一个Segment包含的数据为[pos,pos+byteCount)
+     * 第二个Segment包含的数据为[pos+byteCount,limit)
+     * 返回该链表的新头
      */
     public Segment split(int byteCount) {
         if (byteCount <= 0 || byteCount > limit - pos) throw new IllegalArgumentException();
-        Segment prefix;
-
-        // We have two competing performance goals:
-        //  - Avoid copying data. We accomplish this by sharing segments.
-        //  - Avoid short shared segments. These are bad for performance because they are readonly and
-        //    may lead to long chains of short segments.
-        // To balance these goals we only share segments when the copy will be large.
-        if (byteCount >= SHARE_MINIMUM) {
-            prefix = new Segment(this);
-        } else {
-            prefix = SegmentPool.take();
-            System.arraycopy(data, pos, prefix.data, 0, byteCount);
-        }
-
+        Segment prefix = SegmentPool.take();
+        System.arraycopy(data, pos, prefix.data, 0, byteCount);
         prefix.limit = prefix.pos + byteCount;
         pos += byteCount;
         prev.push(prefix);
@@ -105,26 +96,24 @@ final class Segment {
     }
 
     /**
-     * Call this when the tail and its predecessor may both be less than half
-     * full. This will copy data so that segments can be recycled.
+     * 当尾部和它的前继节点均小于半满时，将调用该方法进行合并
      */
     public void compact() {
         if (prev == this) throw new IllegalStateException();
-        if (!prev.owner) return; // Cannot compact: prev isn't writable.
         int byteCount = limit - pos;
-        int availableByteCount = SIZE - prev.limit + (prev.shared ? 0 : prev.pos);
-        if (byteCount > availableByteCount) return; // Cannot compact: not enough writable space.
+        int availableByteCount = SIZE - prev.limit + prev.pos;
+        if (byteCount > availableByteCount) return;
         writeTo(prev, byteCount);
         pop();
         SegmentPool.recycle(this);
     }
 
-    /** Moves {@code byteCount} bytes from this segment to {@code sink}. */
+    /**
+     * 从本Segment转移byteCount个字节到sink
+     */
     public void writeTo(Segment sink, int byteCount) {
-        if (!sink.owner) throw new IllegalArgumentException();
         if (sink.limit + byteCount > SIZE) {
             // We can't fit byteCount bytes at the sink's current position. Shift sink first.
-            if (sink.shared) throw new IllegalArgumentException();
             if (sink.limit + byteCount - sink.pos > SIZE) throw new IllegalArgumentException();
             System.arraycopy(sink.data, sink.pos, sink.data, 0, sink.limit - sink.pos);
             sink.limit -= sink.pos;

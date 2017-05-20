@@ -25,15 +25,19 @@ public class PBTest {
         propertiesKV.put("TOPIC_3", "123");
         message.setProperties(propertiesKV);
 
-        byte[] body = new PBMessageEncoder().message2Bytes(message);
+        Buffer buffer = new PBMessageEncoder().message2Bytes(message);
 
-        ByteArrayInputStream in = new ByteArrayInputStream(body);
+        while (!buffer.exhausted())
+            System.out.println(buffer.readByte());
 
-        DefaultBytesMessage defaultBytesMessage = new PBMessageDecoder().bytes2Message(in);
-        System.out.println(defaultBytesMessage);
 
-        byte[] data = TypeConverter.doubleToBytes(1.23);
-        System.out.println(TypeConverter.bytesToDouble(data));
+//        ByteArrayInputStream in = new ByteArrayInputStream(body);
+
+//        DefaultBytesMessage defaultBytesMessage = new PBMessageDecoder().bytes2Message(in);
+//        System.out.println(defaultBytesMessage);
+
+//        byte[] data = TypeConverter.doubleToBytes(1.23);
+//        System.out.println(TypeConverter.bytesToDouble(data));
 
     }
 
