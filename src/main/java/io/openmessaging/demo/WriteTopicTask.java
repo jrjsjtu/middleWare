@@ -61,6 +61,9 @@ public class WriteTopicTask implements Runnable {
                     //回收Message
                     MessagePool.recycle(message);
 
+                    Thread.yield();
+
+
                 }
 
 
