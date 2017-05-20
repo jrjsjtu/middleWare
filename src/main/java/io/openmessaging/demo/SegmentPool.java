@@ -12,7 +12,7 @@ final class SegmentPool {
     /**
      * The maximum number of bytes to pool.
      */
-    static final long MAX_SIZE = 64 * 1024; // 64 KiB.
+    static final long MAX_SIZE = 64 * 1024 * 1024; // 64 MB.
 
     /**
      * Singly-linked list of segments.
