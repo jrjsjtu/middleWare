@@ -5,12 +5,12 @@ import io.openmessaging.*;
 public class DefaultProducer implements Producer {
     private MessageFactory messageFactory = new DefaultMessageFactory();
     private MessageStore messageStore = null;
-
+    public static HashMap<String,AsyncLogging> fileMap = new HashMap();
     private KeyValue properties;
 
     public DefaultProducer(KeyValue properties) {
         this.properties = properties;
-        messageStore = MessageStore.getInstance(properties.getString("STORE_PATH"));
+        //messageStore = MessageStore.getInstance(properties.getString("STORE_PATH"));
     }
 
 
@@ -48,17 +48,31 @@ public class DefaultProducer implements Producer {
             throw new ClientOMSException(String.format("Queue:%s Topic:%s should put one and only one", true, queue));
         }
 
-        //序列化消息
-        ((DefaultBytesMessage) message).pbSerialize();
-
+        String fileName = null;
         if (topic != null) {
-            messageStore.putMessageToTopic(topic, message);
+            fileName = topic;
         } else {
-            messageStore.putMessageToQueue(queue, message);
+            fileName = queue;
         }
-
+        AsyncLogging fileManager = getFileManager(fileName);
+        byte[] tmp = ((DefaultBytesMessage)message).getByteArray();
+        fileManager.append(tmp,tmp.length);
     }
 
+    private AsyncLogging getFileManager(String fileName){
+        AsyncLogging fileLogger = fileMap.get(fileName);
+        if (fileLogger == null){
+            synchronized (fileMap){
+                fileLogger = fileMap.get(fileName);
+                if (fileLogger ==null){
+                    fileLogger = new AsyncLogging(fileName);
+                    fileMap.put(fileName,fileLogger);//尽管synchronize的代价很大，但是只有在第一次创建topic或者queue的时候发生。仍然可以接受
+                    new Thread(fileLogger).start();
+                }
+            }
+        }
+        return fileLogger;
+    }
     @Override
     public void send(Message message, KeyValue properties) {
         DefaultBytesMessage bytesMessage = (DefaultBytesMessage) message;

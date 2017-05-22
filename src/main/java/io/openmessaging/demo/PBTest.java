@@ -16,7 +16,7 @@ public class PBTest {
         headerKV.put("TOPIC_1", 1);
         headerKV.put("TOPIC_2", 1.0);
         headerKV.put("TOPIC_3", "123");
-        message.setHeaders(headerKV);
+        //message.setHeaders(headerKV);
 
         DefaultKeyValue propertiesKV = new DefaultKeyValue();
         propertiesKV.put("TOPIC_0", 1);

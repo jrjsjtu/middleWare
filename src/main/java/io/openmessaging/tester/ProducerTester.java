@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import io.openmessaging.demo.DefaultProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,7 +62,7 @@ public class ProducerTester {
                     Message message = null;
                     if (sendNum % 10 == 0) {
                         queueOrTopic = "QUEUE_" + random.nextInt(10);
-                        message = producer.createBytesMessageToQueue(queueOrTopic, (label + "_" + offsets.get(queueOrTopic)).getBytes());
+                        message = producer.createBytesMessageToQueue(queueOrTopic, (label + "asasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasas_" + offsets.get(queueOrTopic)).getBytes());
 
                     } else {
                         queueOrTopic = "TOPIC_" + random.nextInt(10);
@@ -73,9 +74,11 @@ public class ProducerTester {
                     producer.send(message);
                     sendNum++;
                     if (sendNum >= Constants.PRO_MAX) {
+                        System.out.println(sendNum + " "+ Constants.PRO_MAX);
                         break;
                     }
                 } catch (Exception e) {
+                    e.printStackTrace();
                     logger.error("Error occurred in the sending process", e);
                     break;
                 }
@@ -97,6 +100,8 @@ public class ProducerTester {
             ts[i].join();
         }
         long end = System.currentTimeMillis();
+        System.out.println(end-start);
+        System.out.println(DefaultProducer.fileMap.size());
         logger.info("Produce Finished, Cost {} ms", end - start);
     }
 }

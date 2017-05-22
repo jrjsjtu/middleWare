@@ -8,12 +8,7 @@ import java.util.Set;
 
 public class DefaultKeyValue implements KeyValue {
 
-    //k:v:t之间的分隔符
-    private static final String ENTRY_SPLIT = " ";
-    //k v t之间的分隔符
-    private static final String K_V_T_SPLIT = ":";
-
-    public static class NewValue {
+    static class NewValue {
 
         //0表示int，1表示long、2表示double、3表示string
         byte type;
@@ -146,10 +141,6 @@ public class DefaultKeyValue implements KeyValue {
         return newValue.getStringValue();
     }
 
-    public NewValue get(String key) {
-        return kvs.getOrDefault(key, null);
-    }
-
     @Override
     public Set<String> keySet() {
         return kvs.keySet();
@@ -179,41 +170,5 @@ public class DefaultKeyValue implements KeyValue {
     @Override
     public int hashCode() {
         return kvs != null ? kvs.hashCode() : 0;
-    }
-
-    public static DefaultKeyValue parseKVLine(String line) {
-
-        if (line.trim().equals("")) {
-            return null;
-        }
-
-        DefaultKeyValue result = new DefaultKeyValue();
-        String[] array = line.split(ENTRY_SPLIT);
-        String[] kvts = null;
-        for (String kvt : array) {
-
-            kvts = kvt.split(K_V_T_SPLIT);
-            String key = kvts[0];
-            int type = Integer.parseInt(kvts[2]);
-            switch (type) {
-                case 0:
-                    result.put(key, Integer.parseInt(kvts[1]));
-                    break;
-                case 1:
-                    result.put(key, Long.parseLong(kvts[1]));
-                    break;
-                case 2:
-                    result.put(key, Double.parseDouble(kvts[1]));
-                    break;
-                case 3:
-                    result.put(key, kvts[1]);
-                    break;
-            }
-        }
-        return result;
-    }
-
-    public void clear() {
-        kvs.clear();
     }
 }
