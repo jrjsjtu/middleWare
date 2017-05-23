@@ -9,6 +9,8 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -23,14 +25,16 @@ public class AsyncLogging implements Runnable{
     boolean running_;
 
     String filePath;
-
-    Integer intLock = new Integer(0);//this is used as condition variable.
+    
     Lock lock;
+    Condition condition;
 
     AsyncLogging(String fileName){
         this.filePath = Constants.STORE_PATH+fileName;
         running_ = true;
+
         lock  = new ReentrantLock();
+        condition = lock.newCondition();
         currentBuffer = ByteBuffer.allocate(blockingSize);
         nextBuffer = ByteBuffer.allocate(blockingSize);
         buffers_ = new LinkedList();
@@ -49,7 +53,7 @@ public class AsyncLogging implements Runnable{
                 currentBuffer = ByteBuffer.allocate(blockingSize);
             }
             currentBuffer.put(byteArray);
-            synchronized (intLock){intLock.notify();}
+            condition.signal();
         }
         lock.unlock();
     }
@@ -71,11 +75,11 @@ public class AsyncLogging implements Runnable{
             //start of synchronize
             lock.lock();
             if (buffers_.size() == 0){
-                lock.unlock();
-                synchronized (intLock){
-                    try {intLock.wait(3000);} catch (InterruptedException e) {e.printStackTrace();}
+                try {
+                    condition.await(3000, TimeUnit.MILLISECONDS);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-                lock.lock();
             }
             buffers_.add(currentBuffer);
             currentBuffer = newBuffer1;
