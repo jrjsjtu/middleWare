@@ -64,7 +64,6 @@ public class ConsumerTester {
                 try {
                     BytesMessage message = (BytesMessage) consumer.poll();
                     if (message == null) {
-                        System.out.println(((DefaultPullConsumer)consumer).length);
                         break;
                     }
                     //System.out.println(new String(message.getBody()));
