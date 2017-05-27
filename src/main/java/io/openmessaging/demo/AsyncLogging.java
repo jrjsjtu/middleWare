@@ -61,7 +61,10 @@ public class AsyncLogging implements Runnable{
     public void signalFlush(){
         lock.lock();
         exchangeBuffer();
-        if (buffersToWrite.size() == 0){return;}
+        if (buffersToWrite.size() == 0){
+            lock.unlock();
+            return;
+        }
         writeFile();
         lock.unlock();
     }
