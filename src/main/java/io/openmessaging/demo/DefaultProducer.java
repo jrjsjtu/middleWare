@@ -128,11 +128,11 @@ public class DefaultProducer implements Producer {
                 AsyncLogging val = (AsyncLogging) entry.getValue();
                 val.signalFlush();
             }
-        }
-        try {
-            Thread.sleep(3000);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+            try {
+                Thread.sleep(3000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 
