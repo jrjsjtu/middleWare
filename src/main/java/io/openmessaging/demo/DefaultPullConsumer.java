@@ -1,37 +1,36 @@
 package io.openmessaging.demo;
 
-import io.openmessaging.KeyValue;
-import io.openmessaging.Message;
-import io.openmessaging.MessageHeader;
-import io.openmessaging.PullConsumer;
+import io.openmessaging.*;
+import io.openmessaging.tester.Constants;
 import io.openmessaging.tester.ConsumerTester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 public class DefaultPullConsumer implements PullConsumer {
 
     static Logger logger = LoggerFactory.getLogger(ConsumerTester.class);
-
-    private MessageStore messageStore = null;
     private KeyValue properties;
-    private String queue;
-    private Set<String> buckets = new HashSet<>();
-    private List<String> bucketList = new ArrayList<>();
-
-    private Map<String, Integer> topicOffsetMap = new HashMap<>();
-
     //通知队列
-    private BlockingQueue<NoticeMessage> noticeQueue = new LinkedBlockingQueue<>(1024 * 1024);
+    private static HashMap<String,ConsumerFileManager> fileMap = new HashMap<>();
+    private BlockingQueue<ArrayList<BytesMessage>> noticeQueue = new ArrayBlockingQueue<ArrayList<BytesMessage>>(2,true);
+    ArrayList<BytesMessage> curArrayList = null;
+    Iterator iter = null;
+
+    int topicNumber = 0;
 
     public DefaultPullConsumer(KeyValue properties) {
         this.properties = properties;
-        messageStore = MessageStore.getInstance(properties.getString("STORE_PATH"));
     }
 
+    public int length = 0;
     @Override
     public KeyValue properties() {
         return properties;
@@ -39,64 +38,36 @@ public class DefaultPullConsumer implements PullConsumer {
 
     @Override
     public Message poll() {
-        if (buckets.size() == 0 && queue == null) {
-            return null;
-        }
-
-        try {
-            NoticeMessage notice;
-            while ((notice = noticeQueue.take()) != null) {
-
-                if (notice == NoticeMessage.END_QUEUE_MESSAGE) {
-                    queue = null;
-                    if (bucketList.size() == 0)
-                        break;
-                    continue;
-                }
-
-                if (notice.getKey().equals(NoticeMessage.END_TOPIC)) {
-                    String topicName = notice.getValue();
-                    bucketList.remove(topicName);
-//                    NoticiMessagePool.recycle(notice);
-                    if (bucketList.size() == 0 && queue == null)
-                        break;
-                    continue;
-                }
-
-
-                if (notice.getKey().equals(MessageHeader.QUEUE)) {
-                    DefaultBytesMessage message = notice.getAttach();
-//                    NoticiMessagePool.recycle(notice);
-                    if (message != null)
-                        return message;
-//                    Message message = messageStore.pullMessage(queue);
-//                    if (message != null)
-//                        return message;
-                } else {
-
-                    String value = notice.getValue();
-                    for (String bucket : bucketList) {
-
-                        if (bucket.equals(value)) {
-
-                            int offset = topicOffsetMap.getOrDefault(bucket, 0);
-                            Message message = messageStore.pullMessage(bucket, offset);
-                            if (message != null) {
-                                topicOffsetMap.put(bucket, offset + 1);
-                                return message;
-                            }
+        if (iter == null) {
+            try {
+                while (true){
+                    curArrayList = noticeQueue.take();
+                    if (curArrayList.size() == 0){
+                        topicNumber--;
+                        if (topicNumber == 0){
+                            return null;
                         }
+                    }else{
+                        break;
                     }
                 }
-
-
+            } catch (InterruptedException e) {
+                e.printStackTrace();
             }
-
-        } catch (InterruptedException e) {
+            iter = curArrayList.iterator();
+        }
+        Message tmp = null;
+        try{
+            tmp =  (Message) iter.next();
+            if (!iter.hasNext()){
+                iter = null;
+                curArrayList = null;
+            }
+        }catch (Exception e){
             e.printStackTrace();
         }
-
-        return null;
+        length ++;
+        return tmp;
     }
 
     @Override
@@ -116,21 +87,47 @@ public class DefaultPullConsumer implements PullConsumer {
 
     @Override
     public void attachQueue(String queueName, Collection<String> topics) {
-        if (queue != null && !queue.equals(queueName)) {
-            throw new ClientOMSException("You have alreadly attached to a queue " + queue);
+        ConsumerFileManager consumerFileManager;
+        topicNumber = topics.size();
+        if (hasQueueFile(queueName)){
+            consumerFileManager = getFileManager(queueName);
+            consumerFileManager.register(this);
+            topicNumber ++;
         }
-        queue = queueName;
-        buckets.addAll(topics);
-        bucketList.clear();
-        bucketList.addAll(buckets);
-
-        messageStore.registerConsumers(this, queueName, topics);
-
+        // 这个++是因为有一个topic存在的关系，把topic和queue都抽象成一个consumerFileManager
+        for (String tmpStr: topics){
+            consumerFileManager = getFileManager(tmpStr);
+            consumerFileManager.register(this);
+        }
     }
 
-    public void sendNoticeMessage(NoticeMessage notice) {
+    private boolean hasQueueFile(String queueName){
+        File file=new File(Constants.STORE_PATH+queueName);
+        if (file.exists()){
+            return true;
+        }else{
+            return false;
+        }
+    }
+
+    private ConsumerFileManager getFileManager(String fileName){
+        ConsumerFileManager FileManager = fileMap.get(fileName);
+        if (FileManager == null){
+            synchronized (fileMap){
+                FileManager = fileMap.get(fileName);
+                if (FileManager ==null){
+                    FileManager = new ConsumerFileManager(fileName);
+                    fileMap.put(fileName,FileManager);//尽管synchronize的代价很大，但是只有在第一次创建topic或者queue的时候发生。仍然可以接受
+                    new Thread(FileManager).start();
+                }
+            }
+        }
+        return FileManager;
+    }
+
+    public void addBuffer(ArrayList<BytesMessage> messageList){
         try {
-            noticeQueue.put(notice);
+            noticeQueue.put(messageList);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

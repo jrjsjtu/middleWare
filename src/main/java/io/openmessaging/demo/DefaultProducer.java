@@ -2,14 +2,18 @@ package io.openmessaging.demo;
 
 import io.openmessaging.*;
 
+import java.util.HashMap;
+import java.util.Iterator;
+
 public class DefaultProducer implements Producer {
     private MessageFactory messageFactory = new DefaultMessageFactory();
-    private MessageStore messageStore = null;
     public static HashMap<String,AsyncLogging> fileMap = new HashMap();
-    private KeyValue properties;
 
+    private KeyValue properties;
+    private static int producerNumber = 0;
     public DefaultProducer(KeyValue properties) {
         this.properties = properties;
+        producerNumber ++;
         //messageStore = MessageStore.getInstance(properties.getString("STORE_PATH"));
     }
 
@@ -112,9 +116,13 @@ public class DefaultProducer implements Producer {
 
     @Override
     public void flush() {
-
-
-
+        producerNumber--;
+        if (producerNumber==0){
+            Iterator iter = fileMap.entrySet().iterator();
+            while (iter.hasNext()){
+                ((AsyncLogging)(iter.next())).signalFlush();
+            }
+        }
     }
 
 }

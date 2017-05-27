@@ -134,5 +134,4 @@ public interface Producer extends MessageFactory, ServiceLifecycle {
      * 在规定时间内，该接口没有返回，producer会被强制杀掉，可能会有数据丢失，从而导致数据不正确；
      */
     void flush();
-
 }

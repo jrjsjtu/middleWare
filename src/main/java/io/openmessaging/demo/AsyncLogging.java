@@ -25,7 +25,7 @@ public class AsyncLogging implements Runnable{
     boolean running_;
 
     String filePath;
-    
+
     Lock lock;
     Condition condition;
 
@@ -58,19 +58,27 @@ public class AsyncLogging implements Runnable{
         lock.unlock();
     }
 
+    public void signalFlush(){
+        lock.lock();
+        exchangeBuffer();
+        if (buffersToWrite.size() == 0){return;}
+        writeFile();
+        lock.unlock();
+    }
+    //variables for thread
+    ByteBuffer newBuffer1 = ByteBuffer.allocate(blockingSize);
+    ByteBuffer newBuffer2 = ByteBuffer.allocate(blockingSize);
+    ByteBuffer tmpBuffer;
+    LinkedList<ByteBuffer> tmp;
+    LinkedList<ByteBuffer> buffersToWrite = new LinkedList();
+    FileOutputStream out = null;
     @Override
     public void run() {
-        FileOutputStream out = null;
         try {
             out = new FileOutputStream(new File(filePath), true);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        ByteBuffer newBuffer1 = ByteBuffer.allocate(blockingSize);
-        ByteBuffer newBuffer2 = ByteBuffer.allocate(blockingSize);
-        ByteBuffer tmpBuffer;
-        LinkedList<ByteBuffer> tmp;
-        LinkedList<ByteBuffer> buffersToWrite = new LinkedList();
         while (running_){
             //start of synchronize
             lock.lock();
@@ -81,41 +89,59 @@ public class AsyncLogging implements Runnable{
                     e.printStackTrace();
                 }
             }
-            buffers_.add(currentBuffer);
-            currentBuffer = newBuffer1;
-            newBuffer1 = null;
-            tmp = buffersToWrite;buffersToWrite = buffers_;buffers_=tmp;//swap buffers_ and buffersToWrite
-            if (nextBuffer == null){
-                nextBuffer = newBuffer2;
-                newBuffer2 = null;
-            }
+            exchangeBuffer();
             lock.unlock();
             //End of synchronize
             if (buffersToWrite.size() == 0){continue;}
-            try {
-                for (int i=0;i<buffersToWrite.size();i++){
-                    out.write(buffersToWrite.get(i).array(),0,buffersToWrite.get(i).position());
-                }
-                out.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            if (newBuffer1 == null){
-                newBuffer1 = buffersToWrite.pop();
-                newBuffer1.clear();
-            }
-
-            if (newBuffer2 == null){
-                newBuffer2 = buffersToWrite.pop();
-                newBuffer2.clear();
-            }
-            buffersToWrite.clear();
+            writeFile();
         }
         try {
             out.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private void exchangeBuffer(){
+        buffers_.add(currentBuffer);
+        currentBuffer = newBuffer1;
+        newBuffer1 = null;
+        tmp = buffersToWrite;buffersToWrite = buffers_;buffers_=tmp;//swap buffers_ and buffersToWrite
+        if (nextBuffer == null){
+            nextBuffer = newBuffer2;
+            newBuffer2 = null;
+        }
+    }
+    private void writeFile(){
+        try {
+            for (int i=0;i<buffersToWrite.size();i++){
+                tmpBuffer = buffersToWrite.get(i);
+                out.write(int2byte(tmpBuffer.position()));
+                out.write(tmpBuffer.array(),0,tmpBuffer.position());
+            }
+            out.flush();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if (newBuffer1 == null){
+            newBuffer1 = buffersToWrite.pop();
+            newBuffer1.clear();
+        }
+
+        if (newBuffer2 == null){
+            newBuffer2 = buffersToWrite.pop();
+            newBuffer2.clear();
+        }
+        buffersToWrite.clear();
+    }
+
+    private static byte[] int2byte(int res) {
+        byte[] targets = new byte[4];
+        targets[0] = (byte) (res >>> 24);// 最低位
+        targets[1] = (byte) ((res >> 16) & 0xff);// 次低位
+        targets[2] = (byte) ((res >> 8) & 0xff);// 次高位
+        targets[3] = (byte) (res & 0xff);// 最高位,无符号右移。
+        return targets;
     }
 }

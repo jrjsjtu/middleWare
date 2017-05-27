@@ -4,13 +4,11 @@ import io.openmessaging.BytesMessage;
 import io.openmessaging.KeyValue;
 import io.openmessaging.MessageHeader;
 import io.openmessaging.PullConsumer;
+import io.openmessaging.demo.DefaultPullConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConsumerTester {
@@ -58,7 +56,6 @@ public class ConsumerTester {
                     map.put(Constants.PRO_PRE + i, 0);
                 }
             }
-
         }
 
         @Override
@@ -67,30 +64,12 @@ public class ConsumerTester {
                 try {
                     BytesMessage message = (BytesMessage) consumer.poll();
                     if (message == null) {
+                        System.out.println(((DefaultPullConsumer)consumer).length);
                         break;
                     }
-                    String queueOrTopic;
-                    if (message.headers().getString(MessageHeader.QUEUE) != null) {
-                        queueOrTopic = message.headers().getString(MessageHeader.QUEUE);
-                    } else {
-                        queueOrTopic = message.headers().getString(MessageHeader.TOPIC);
-                    }
-                    if (queueOrTopic == null || queueOrTopic.length() == 0) {
-                        throw new Exception("Queue or Topic name is empty");
-                    }
-                    String body = new String(message.getBody());
-                    int index = body.lastIndexOf("_");
-                    String producer = body.substring(0, index);
-                    int offset = Integer.parseInt(body.substring(index + 1));
-                    if (offset != offsets.get(queueOrTopic).get(producer)) {
-                        Map<String, Integer> stringIntegerMap = offsets.get(producer);
-                        //logger.error("Offset not equal expected:{} actual:{} producer:{} queueOrTopic:{}", offsets.get(producer), offset, producer, queueOrTopic);
-                        break;
-                    } else {
-                        offsets.get(queueOrTopic).put(producer, offset + 1);
-                    }
-                    pullNum++;
+                    //System.out.println(new String(message.getBody()));
                 } catch (Exception e) {
+                    e.printStackTrace();
                     logger.error("Error occurred in the consuming process", e);
                     break;
                 }
@@ -105,9 +84,11 @@ public class ConsumerTester {
 
     public static void main(String[] args) throws Exception {
         Thread[] ts = new Thread[Constants.CON_NUM];
+        List<String> topList= new ArrayList<>();
+        //topList.add(Constants.TOPIC_PRE + 0);
+        topList.add(Constants.TOPIC_PRE + 1);
         for (int i = 0; i < ts.length; i++) {
-            ts[i] = new ConsumerTask(Constants.QUEUE_PRE + i,
-                    Collections.singletonList(Constants.TOPIC_PRE + i));
+            ts[i] = new ConsumerTask(Constants.QUEUE_PRE + i, topList);
         }
         long start = System.currentTimeMillis();
         for (int i = 0; i < ts.length; i++) {
@@ -121,6 +102,7 @@ public class ConsumerTester {
             pullNum += ((ConsumerTask) ts[i]).getPullNum();
         }
         long end = System.currentTimeMillis();
+        System.out.println(end-start);
         logger.info("Consumer Finished, Cost {} ms, Num {}", end - start, pullNum);
     }
 }
