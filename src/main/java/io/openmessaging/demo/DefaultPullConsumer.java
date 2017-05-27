@@ -25,9 +25,10 @@ public class DefaultPullConsumer implements PullConsumer {
     Iterator iter = null;
 
     int topicNumber = 0;
-
+    String parent;
     public DefaultPullConsumer(KeyValue properties) {
         this.properties = properties;
+        parent = properties.getString("STORE_PATH");
     }
 
     public int length = 0;
@@ -102,7 +103,7 @@ public class DefaultPullConsumer implements PullConsumer {
     }
 
     private boolean hasQueueFile(String queueName){
-        File file=new File(Constants.STORE_PATH+queueName);
+        File file=new File(parent+queueName);
         if (file.exists()){
             return true;
         }else{
@@ -116,7 +117,7 @@ public class DefaultPullConsumer implements PullConsumer {
             synchronized (fileMap){
                 FileManager = fileMap.get(fileName);
                 if (FileManager ==null){
-                    FileManager = new ConsumerFileManager(fileName);
+                    FileManager = new ConsumerFileManager(parent,fileName);
                     fileMap.put(fileName,FileManager);//尽管synchronize的代价很大，但是只有在第一次创建topic或者queue的时候发生。仍然可以接受
                     new Thread(FileManager).start();
                 }

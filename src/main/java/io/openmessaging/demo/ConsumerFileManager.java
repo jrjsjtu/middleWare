@@ -42,7 +42,7 @@ public class ConsumerFileManager implements Runnable {
         blockNode(long blockOffset,int blockSize){this.blockOffset = blockOffset;this.blockSize = blockSize;}
     }
 
-    ConsumerFileManager(String fileName){
+    ConsumerFileManager(String parent,String fileName){
         fileIndex = new ArrayList<>();
 
         lock = new ReentrantLock();
@@ -52,7 +52,7 @@ public class ConsumerFileManager implements Runnable {
         tailer = new ArrayList<>();
         treeMap = new TreeMap<>();
         try{
-            fc = new RandomAccessFile(Constants.STORE_PATH+fileName, "r").getChannel();
+            fc = new RandomAccessFile(parent+fileName, "r").getChannel();
             fileSize = fc.size();
             ByteBuffer firstInt = ByteBuffer.allocate(4);
             fc.read(firstInt);
@@ -151,7 +151,7 @@ public class ConsumerFileManager implements Runnable {
     }
 
     public static void main(String[] args){
-        ConsumerFileManager consumerFileManager = new ConsumerFileManager("TOPIC_1");
+        ConsumerFileManager consumerFileManager = new ConsumerFileManager(Constants.STORE_PATH,"TOPIC_1");
         DefaultPullConsumer defaultPullConsumer = new DefaultPullConsumer(new DefaultKeyValue());
         new Thread(consumerFileManager).start();
         consumerFileManager.register(defaultPullConsumer);

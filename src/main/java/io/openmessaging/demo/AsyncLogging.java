@@ -29,8 +29,8 @@ public class AsyncLogging implements Runnable{
     Lock lock;
     Condition condition;
 
-    AsyncLogging(String fileName){
-        this.filePath = Constants.STORE_PATH+fileName;
+    AsyncLogging(String parent,String fileName){
+        this.filePath = parent+fileName;
         running_ = true;
 
         lock  = new ReentrantLock();
@@ -87,7 +87,9 @@ public class AsyncLogging implements Runnable{
             lock.lock();
             if (buffers_.size() == 0){
                 try {
-                    condition.await(3000, TimeUnit.MILLISECONDS);
+                    //反正最后强制flush也不用三秒刷新一次了。。
+                    //condition.await(3000, TimeUnit.MILLISECONDS);
+                    condition.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }

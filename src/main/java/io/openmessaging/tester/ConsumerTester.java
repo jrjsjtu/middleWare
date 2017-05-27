@@ -60,10 +60,13 @@ public class ConsumerTester {
 
         @Override
         public void run() {
+            int a= 0;
             while (true) {
                 try {
+                    a ++;
                     BytesMessage message = (BytesMessage) consumer.poll();
-                    if (message == null) {
+                    if (message == null){
+                        System.out.println(a);
                         break;
                     }
                     //System.out.println(new String(message.getBody()));

@@ -65,7 +65,8 @@ public class ProducerTester {
                         message = producer.createBytesMessageToQueue(queueOrTopic, (label + "asasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasas_" + offsets.get(queueOrTopic)).getBytes());
 
                     } else {
-                        queueOrTopic = "TOPIC_" + random.nextInt(10);
+                        //queueOrTopic = "TOPIC_" + random.nextInt(10);
+                        queueOrTopic = "TOPIC_" + 1;
                         message = producer.createBytesMessageToTopic(queueOrTopic, (label + "_" + offsets.get(queueOrTopic)).getBytes());
 
                     }
@@ -74,7 +75,7 @@ public class ProducerTester {
                     producer.send(message);
                     sendNum++;
                     if (sendNum >= Constants.PRO_MAX) {
-                        System.out.println(sendNum + " "+ Constants.PRO_MAX);
+                        producer.flush();
                         break;
                     }
                 } catch (Exception e) {
@@ -101,7 +102,6 @@ public class ProducerTester {
         }
         long end = System.currentTimeMillis();
         System.out.println(end-start);
-        System.out.println(DefaultProducer.fileMap.size());
         logger.info("Produce Finished, Cost {} ms", end - start);
     }
 }

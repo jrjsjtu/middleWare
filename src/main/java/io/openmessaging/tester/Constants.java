@@ -10,6 +10,4 @@ public class Constants {
     public final static String CON_PRE = System.getProperty("con.pre", "CONSUMER_");
     public final static String TOPIC_PRE = System.getProperty("topic.pre", "TOPIC_");
     public final static String QUEUE_PRE = System.getProperty("topic.pre", "QUEUE_");
-
-
 }

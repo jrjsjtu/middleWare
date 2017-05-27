@@ -4,16 +4,20 @@ import io.openmessaging.*;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultProducer implements Producer {
     private MessageFactory messageFactory = new DefaultMessageFactory();
     public static HashMap<String,AsyncLogging> fileMap = new HashMap();
 
     private KeyValue properties;
-    private static int producerNumber = 0;
+    String parent;
+    private static AtomicInteger producerNumber = new AtomicInteger(0);
     public DefaultProducer(KeyValue properties) {
         this.properties = properties;
-        producerNumber ++;
+        producerNumber.getAndIncrement();
+        parent = properties.getString("STORE_PATH");
         //messageStore = MessageStore.getInstance(properties.getString("STORE_PATH"));
     }
 
@@ -69,7 +73,7 @@ public class DefaultProducer implements Producer {
             synchronized (fileMap){
                 fileLogger = fileMap.get(fileName);
                 if (fileLogger ==null){
-                    fileLogger = new AsyncLogging(fileName);
+                    fileLogger = new AsyncLogging(parent,fileName);
                     fileMap.put(fileName,fileLogger);//尽管synchronize的代价很大，但是只有在第一次创建topic或者queue的时候发生。仍然可以接受
                     new Thread(fileLogger).start();
                 }
@@ -116,11 +120,13 @@ public class DefaultProducer implements Producer {
 
     @Override
     public void flush() {
-        producerNumber--;
-        if (producerNumber==0){
+        producerNumber.decrementAndGet();
+        if (producerNumber.get() == 0){
             Iterator iter = fileMap.entrySet().iterator();
             while (iter.hasNext()){
-                ((AsyncLogging)(iter.next())).signalFlush();
+                Map.Entry entry = (Map.Entry) iter.next();
+                AsyncLogging val = (AsyncLogging) entry.getValue();
+                val.signalFlush();
             }
         }
     }
