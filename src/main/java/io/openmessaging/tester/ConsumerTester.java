@@ -88,8 +88,10 @@ public class ConsumerTester {
         Thread[] ts = new Thread[Constants.CON_NUM];
         List<String> topList= new ArrayList<>();
         //topList.add(Constants.TOPIC_PRE + 0);
-        topList.add(Constants.TOPIC_PRE + 1);
+        //topList.add(Constants.TOPIC_PRE + 1);
         for (int i = 0; i < ts.length; i++) {
+            topList= new ArrayList<>();
+            topList.add(Constants.TOPIC_PRE + 1);
             ts[i] = new ConsumerTask(Constants.QUEUE_PRE + i, topList);
         }
         long start = System.currentTimeMillis();

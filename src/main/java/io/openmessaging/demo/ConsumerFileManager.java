@@ -24,17 +24,20 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ConsumerFileManager implements Runnable {
     TreeMap<Integer,ArrayList<PullConsumer>> treeMap; //管理每一个consumer读到了哪里？并且top节点一定是最小的
-
+    private static int blockingSize = 1024*1024*2;
     ArrayList<PullConsumer> header;
     ArrayList<PullConsumer> tailer;
     ArrayList<blockNode> fileIndex;
-
     long fileSize;
     Condition condition;
     Lock lock;
     Long headOffset;
 
     FileChannel fc = null;
+    MappedByteBuffer buff;
+    ByteBuffer firstInt;
+
+    byte[] infoBuffer = new byte[blockingSize];
 
     class blockNode{
         public long blockOffset;
@@ -53,11 +56,11 @@ public class ConsumerFileManager implements Runnable {
         treeMap = new TreeMap<>();
         try{
             fc = new RandomAccessFile(parent+fileName, "r").getChannel();
+            buff = fc.map(FileChannel.MapMode.READ_ONLY,0,blockingSize);
             fileSize = fc.size();
-            ByteBuffer firstInt = ByteBuffer.allocate(4);
-            fc.read(firstInt);
-            firstInt.flip();
-            int tmpInt = firstInt.getInt();
+            buff.get(infoBuffer);
+            buff.flip();
+            int tmpInt = buff.getInt();
             fileIndex.add(new blockNode(4l,tmpInt));
             headOffset = 4l + tmpInt;
         }catch(Exception e){
@@ -107,9 +110,10 @@ public class ConsumerFileManager implements Runnable {
             int arraySize = fileIndex.size();//cur_node == 0 时,fileIndex.size()=1应该读取 fileIndex.get(0).offset位置
             if (cur_node<arraySize){
                 tmpNode = fileIndex.get(cur_node);
-                byteBuffer4Block = ByteBuffer.allocate(tmpNode.blockSize);
                 try {
-                    fc = fc.position(tmpNode.blockOffset);
+                    buff = fc.map(FileChannel.MapMode.READ_ONLY,tmpNode.blockOffset,tmpNode.blockSize);
+                    buff.get(infoBuffer,0,tmpNode.blockSize);
+                    byteBuffer4Block = ByteBuffer.wrap(infoBuffer,0,tmpNode.blockSize);//这里直接得到
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -126,20 +130,23 @@ public class ConsumerFileManager implements Runnable {
                         }
                         continue;
                     }
-                    fc = fc.position(curPostion);
-                    ByteBuffer firstInt = ByteBuffer.allocate(4);
-                    fc.read(firstInt);
-                    firstInt.flip();
-                    tmpInt = firstInt.getInt();
+                    if (curPostion + blockingSize >fileSize){
+                        buff = fc.map(FileChannel.MapMode.READ_ONLY,curPostion,fileSize-curPostion);
+                        buff.get(infoBuffer,0,(int)(fileSize-curPostion));
+                    }else{
+                        buff = fc.map(FileChannel.MapMode.READ_ONLY,curPostion,blockingSize);
+                        buff.get(infoBuffer);
+                    }
+                    buff.flip();
+                    tmpInt = buff.getInt();
                     fileIndex.add(new blockNode(curPostion+4,tmpInt));
-                    byteBuffer4Block = ByteBuffer.allocate(tmpInt);
+                    byteBuffer4Block = ByteBuffer.wrap(infoBuffer,4,tmpInt);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
             ArrayList<BytesMessage> result = null;
             try {
-                fc.read(byteBuffer4Block);
                 result = getMessageList(byteBuffer4Block);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -164,7 +171,7 @@ public class ConsumerFileManager implements Runnable {
 
     private static ArrayList<BytesMessage> getMessageList(ByteBuffer byteBuffer){
         ArrayList<BytesMessage> messagesArray = new ArrayList<>();
-        byteBuffer.flip();
+        //byteBuffer.flip();
         int len;
         byte[] body;
         int strlen,vallen;byte[] tmpkey,tmpvalue;String key,valuestr;
