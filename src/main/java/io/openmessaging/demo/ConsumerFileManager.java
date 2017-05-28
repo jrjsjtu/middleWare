@@ -22,7 +22,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class ConsumerFileManager implements Runnable {
     TreeMap<Integer,ArrayList<PullConsumer>> treeMap; //管理每一个consumer读到了哪里？并且top节点一定是最小的
-    private static int blockingSize = 1024*1024*2;
+    private static int blockingSize = 1024*1024*1;
     ArrayList<PullConsumer> header;
     ArrayList<PullConsumer> tailer;
     ArrayList<blockNode> fileIndex;
