@@ -13,13 +13,14 @@ import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultPullConsumer implements PullConsumer {
 
+    private static CountDownLatch fuck = new CountDownLatch(50);
+    private static AtomicInteger consumerIndex = new AtomicInteger(0);
+    private  int index;
     static Logger logger = LoggerFactory.getLogger(ConsumerTester.class);
     private KeyValue properties;
     //通知队列
@@ -76,8 +77,20 @@ public class DefaultPullConsumer implements PullConsumer {
 
     ArrayList<BytesMessage> messagesArray = null;
     Iterator iter;
+    boolean firstTime = true;
     @Override
     public Message poll() {
+        if (firstTime){
+            index = consumerIndex.getAndIncrement();
+            if (index >= 50){
+                try {
+                    fuck.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            firstTime = false;
+        }
         if (messagesArray != null){
             BytesMessage bytesMessage = (BytesMessage) iter.next();
             if (!iter.hasNext()){
@@ -87,6 +100,9 @@ public class DefaultPullConsumer implements PullConsumer {
             return bytesMessage;
         }else{
             if (channelsList.size() == 0){
+                if (index<50){
+                    fuck.countDown();
+                }
                 return null;
             }else{
                 int curSize = channelsList.size();
