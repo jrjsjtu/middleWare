@@ -5,9 +5,7 @@ import io.openmessaging.Message;
 import io.openmessaging.PullConsumer;
 import io.openmessaging.tester.Constants;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -47,8 +45,13 @@ public class ConsumerFileManager implements Runnable {
 
     ConsumerFileManager(String parent,String fileName){
         fileIndex = new ArrayList<>();
-
         lock = new ReentrantLock();
+        try {
+            FileOutputStream out = new FileOutputStream(FileDescriptor.out);
+            out.write('A');
+            out.close();
+        } catch (IOException e) {
+        }
         condition = lock.newCondition();
 
         header = new ArrayList<>();
@@ -56,9 +59,15 @@ public class ConsumerFileManager implements Runnable {
         treeMap = new TreeMap<>();
         try{
             fc = new RandomAccessFile(parent+fileName, "r").getChannel();
-            buff = fc.map(FileChannel.MapMode.READ_ONLY,0,blockingSize);
+
             fileSize = fc.size();
-            buff.get(infoBuffer);
+            if (fileSize > blockingSize){
+                buff = fc.map(FileChannel.MapMode.READ_ONLY,0,blockingSize);
+                buff.get(infoBuffer);
+            }else{
+                buff = fc.map(FileChannel.MapMode.READ_ONLY,0,fileSize);
+                buff.get(infoBuffer,0,(int)fileSize);
+            }
             buff.flip();
             int tmpInt = buff.getInt();
             fileIndex.add(new blockNode(4l,tmpInt));
@@ -151,6 +160,11 @@ public class ConsumerFileManager implements Runnable {
             } catch (Exception e) {
                 e.printStackTrace();
             }
+            try {
+                Thread.sleep(10000000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
             for (int i=0;i<pullArray.size();i++){
                 ((DefaultPullConsumer)(pullArray.get(i))).addBuffer(result);
             }
@@ -169,13 +183,16 @@ public class ConsumerFileManager implements Runnable {
         }
     }
 
+
     private static ArrayList<BytesMessage> getMessageList(ByteBuffer byteBuffer){
         ArrayList<BytesMessage> messagesArray = new ArrayList<>();
-        //byteBuffer.flip();
+        byteBuffer.flip();
         int len;
         byte[] body;
         int strlen,vallen;byte[] tmpkey,tmpvalue;String key,valuestr;
+        int i= 0;
         while (byteBuffer.hasRemaining()){
+            i++;
             len = byteBuffer.getInt();
             body = new byte[len];
             byteBuffer.get(body);
@@ -257,6 +274,7 @@ public class ConsumerFileManager implements Runnable {
             }
             messagesArray.add(message);
         }
+        System.out.println(i);
         return messagesArray;
     }
 }
