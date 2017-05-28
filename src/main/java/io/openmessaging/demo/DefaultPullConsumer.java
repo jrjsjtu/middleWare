@@ -27,7 +27,7 @@ public class DefaultPullConsumer implements PullConsumer {
 
     private ArrayList<fileNode> channelsList = new ArrayList<>();
     byte[] byte4int = new byte[4];
-    byte[] byte4message = new byte[1024*1024*2];
+    byte[] byte4message = new byte[1024*1024*1];
 
     ByteBuffer intByteBuffer = ByteBuffer.wrap(byte4int);
     int topicNumber = 0;
