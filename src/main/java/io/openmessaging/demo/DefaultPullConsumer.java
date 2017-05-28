@@ -82,9 +82,10 @@ public class DefaultPullConsumer implements PullConsumer {
     public Message poll() {
         if (firstTime){
             index = consumerIndex.getAndIncrement();
-            if (index >= 50){
+            if (index >= 60){
                 try {
                     fuck.await();
+                    Thread.sleep(1000); //给点时间GC，给点机会。
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -100,7 +101,9 @@ public class DefaultPullConsumer implements PullConsumer {
             return bytesMessage;
         }else{
             if (channelsList.size() == 0){
-                if (index<50){
+                if (index<60){
+                    byte4int = null;
+                    byte4message = null;
                     fuck.countDown();
                 }
                 return null;
