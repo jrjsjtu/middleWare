@@ -196,7 +196,7 @@ public class ConsumerFileManager implements Runnable {
             len = byteBuffer.getInt();
             body = new byte[len];
             byteBuffer.get(body);
-            DefaultBytesMessage message = new DefaultBytesMessage(body);
+            OutputMesssage message = new OutputMesssage(body);
             while (true){
                 char tmp = byteBuffer.getChar();
                 if (tmp == ' ') break;
