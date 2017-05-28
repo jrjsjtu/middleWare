@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class DefaultPullConsumer implements PullConsumer {
 
     private static CountDownLatch fuck = new CountDownLatch(50);
+    private static CountDownLatch fuck2 = new CountDownLatch(50);
     private static AtomicInteger consumerIndex = new AtomicInteger(0);
     private  int index;
     static Logger logger = LoggerFactory.getLogger(ConsumerTester.class);
@@ -27,10 +28,10 @@ public class DefaultPullConsumer implements PullConsumer {
     ArrayList<BytesMessage> curArrayList = null;
 
     private ArrayList<fileNode> channelsList = new ArrayList<>();
-    byte[] byte4int = new byte[4];
-    byte[] byte4message = new byte[1024*1024*1];
+    byte[] byte4int;
+    byte[] byte4message;
 
-    ByteBuffer intByteBuffer = ByteBuffer.wrap(byte4int);
+    ByteBuffer intByteBuffer;
     int topicNumber = 0;
     int cur_node = 0;
     String parent;
@@ -58,7 +59,7 @@ public class DefaultPullConsumer implements PullConsumer {
                 curPostion += (4+tmp);
                 raf.read(byte4message,0,tmp);
                 return ByteBuffer.wrap(byte4message,0,tmp);
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
             return null;
@@ -82,14 +83,23 @@ public class DefaultPullConsumer implements PullConsumer {
     public Message poll() {
         if (firstTime){
             index = consumerIndex.getAndIncrement();
-            if (index >= 60){
+            if (index >= 50){
                 try {
                     fuck.await();
-                    Thread.sleep(1000); //给点时间GC，给点机会。
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
+            if (index >= 100){
+                try {
+                    fuck2.await();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            byte4int = new byte[4];
+            byte4message = new byte[1024*1024*1];
+            intByteBuffer = ByteBuffer.wrap(byte4int);
             firstTime = false;
         }
         if (messagesArray != null){
@@ -101,10 +111,11 @@ public class DefaultPullConsumer implements PullConsumer {
             return bytesMessage;
         }else{
             if (channelsList.size() == 0){
-                if (index<60){
-                    byte4int = null;
-                    byte4message = null;
+                if (index<50){
                     fuck.countDown();
+                }
+                if (index>=50 && index < 100){
+                    fuck2.countDown();
                 }
                 return null;
             }else{
