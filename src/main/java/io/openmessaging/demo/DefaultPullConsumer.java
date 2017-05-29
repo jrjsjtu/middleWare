@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultPullConsumer implements PullConsumer {
     private static int step = 30;
-    private static ArrayList<CountDownLatch> fuckList = new ArrayList<>();
+    private static ArrayList<CountDownLatch> fuckList;
     private static AtomicInteger consumerIndex = new AtomicInteger(0);
     private  int index;
     //static Logger logger = LoggerFactory.getLogger(ConsumerTester.class);
@@ -71,8 +71,11 @@ public class DefaultPullConsumer implements PullConsumer {
             }
         }
     }
-    public DefaultPullConsumer(KeyValue properties) {
+    static{
+        fuckList = new ArrayList<>();
         fuckList.add(new CountDownLatch(step));
+    }
+    public DefaultPullConsumer(KeyValue properties) {
         this.properties = properties;
         parent = properties.getString("STORE_PATH");
     }
