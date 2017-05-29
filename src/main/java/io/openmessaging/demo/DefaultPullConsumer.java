@@ -14,8 +14,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultPullConsumer implements PullConsumer {
-    private static int step1 = 40;
-    private static int step2 = 80;
+    private static int step1 = 20;
+    private static int step2 = 40;
     private static CountDownLatch fuck = new CountDownLatch(step1);
     private static CountDownLatch fuck2 = new CountDownLatch(step2);
     private static AtomicInteger consumerIndex = new AtomicInteger(0);
@@ -36,24 +36,23 @@ public class DefaultPullConsumer implements PullConsumer {
     class fileNode{
         long fileSize;
         long curPostion = 0;
-        FileInputStream raf;
+        RandomAccessFile raf;
+        //FileInputStream raf;
         public fileNode(String fileName){
             try {
-                raf = new FileInputStream(fileName);
-                //fileSize = raf.length();
+                raf = new RandomAccessFile (fileName, "r");
+                //raf = new FileInputStream(fileName);
+                fileSize = raf.length();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
         public ByteBuffer getByteBuffer(){
-            /*
             if (curPostion == fileSize){
                 return null;
             }
-            */
             try {
-                if (raf.available() == 0){return null;}
                 raf.read(byte4int);
                 intByteBuffer = ByteBuffer.wrap(byte4int);
                 int tmp = intByteBuffer.getInt();
@@ -114,6 +113,7 @@ public class DefaultPullConsumer implements PullConsumer {
         if (messagesArray != null){
             BytesMessage bytesMessage = (BytesMessage) iter.next();
             if (!iter.hasNext()){
+                messagesArray.clear();
                 messagesArray = null;
                 iter = null;
             }
@@ -121,23 +121,19 @@ public class DefaultPullConsumer implements PullConsumer {
         }else{
             if (channelsList.size() == 0){
                 if (index<step1){
-                    //System.out.println("step1");
+                    System.out.println(index);
                     fuck.countDown();
                 }
                 if (index < step2){
-                    if (index>step1){
-                        //System.out.println("step2");
-                    }
                     fuck2.countDown();
                 }
                 return null;
             }else{
                 int curSize = channelsList.size();
-                //yuan lai cur_node%curSize
-                ByteBuffer tmpBuffer = channelsList.get(curSize-1).getByteBuffer();
+                ByteBuffer tmpBuffer = channelsList.get(cur_node%curSize).getByteBuffer();
                 if (tmpBuffer == null){
-                    channelsList.get(curSize-1).closeFileFD();
-                    channelsList.remove(curSize-1);
+                    channelsList.get(cur_node%curSize).closeFileFD();
+                    channelsList.remove(cur_node%curSize);
                     return poll();
                 }else{
                     cur_node ++;
