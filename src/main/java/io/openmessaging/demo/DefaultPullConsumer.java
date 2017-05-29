@@ -21,9 +21,8 @@ public class DefaultPullConsumer implements PullConsumer {
     //static Logger logger = LoggerFactory.getLogger(ConsumerTester.class);
     private KeyValue properties;
     //通知队列
-    ArrayList<BytesMessage> curArrayList = null;
 
-    private ArrayList<fileNode> channelsList = new ArrayList<>();
+    private ArrayList<String> channelsList = new ArrayList<>();
     byte[] byte4int;
     byte[] byte4message;
 
@@ -89,6 +88,7 @@ public class DefaultPullConsumer implements PullConsumer {
     ArrayList<BytesMessage> messagesArray = null;
     Iterator iter;
     boolean firstTime = true;
+    fileNode tmpFileNode;
     @Override
     public Message poll() {
         if (firstTime){
@@ -106,6 +106,7 @@ public class DefaultPullConsumer implements PullConsumer {
             byte4int = new byte[4];
             byte4message = new byte[1024*1024*1];
             intByteBuffer = ByteBuffer.wrap(byte4int);
+            tmpFileNode = new fileNode(parent+channelsList.get(0));
             firstTime = false;
         }
         if (messagesArray != null){
@@ -121,14 +122,15 @@ public class DefaultPullConsumer implements PullConsumer {
                 fuckList.get(index/step).countDown();
                 return null;
             }else{
-                int curSize = channelsList.size();
-                ByteBuffer tmpBuffer = channelsList.get(cur_node%curSize).getByteBuffer();
+                ByteBuffer tmpBuffer = tmpFileNode.getByteBuffer();
                 if (tmpBuffer == null){
-                    channelsList.get(cur_node%curSize).closeFileFD();
-                    channelsList.remove(cur_node%curSize);
+                    tmpFileNode.closeFileFD();
+                    channelsList.remove(0);
+                    if (channelsList.size() >0){
+                        tmpFileNode = new fileNode(parent+channelsList.get(0));
+                    }
                     return poll();
                 }else{
-                    cur_node ++;
                     messagesArray = getMessageList(tmpBuffer);
                     iter = messagesArray.iterator();
                     return poll();
@@ -180,12 +182,12 @@ public class DefaultPullConsumer implements PullConsumer {
     public void attachQueue(String queueName, Collection<String> topics) {
         topicNumber = topics.size();
         if (hasQueueFile(queueName)){
-            channelsList.add(new fileNode(parent+queueName));
+            channelsList.add(queueName);
             topicNumber ++;
         }
         // 这个++是因为有一个topic存在的关系，把topic和queue都抽象成一个consumerFileManager
         for (String tmpStr: topics){
-            channelsList.add(new fileNode(parent + tmpStr));
+            channelsList.add(tmpStr);
         }
     }
 
