@@ -6,10 +6,7 @@ import io.openmessaging.tester.ConsumerTester;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
@@ -17,12 +14,13 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultPullConsumer implements PullConsumer {
-
-    private static CountDownLatch fuck = new CountDownLatch(50);
-    private static CountDownLatch fuck2 = new CountDownLatch(50);
+    private static int step1 = 40;
+    private static int step2 = 80;
+    private static CountDownLatch fuck = new CountDownLatch(step1);
+    private static CountDownLatch fuck2 = new CountDownLatch(step2);
     private static AtomicInteger consumerIndex = new AtomicInteger(0);
     private  int index;
-    static Logger logger = LoggerFactory.getLogger(ConsumerTester.class);
+    //static Logger logger = LoggerFactory.getLogger(ConsumerTester.class);
     private KeyValue properties;
     //通知队列
     ArrayList<BytesMessage> curArrayList = null;
@@ -38,21 +36,24 @@ public class DefaultPullConsumer implements PullConsumer {
     class fileNode{
         long fileSize;
         long curPostion = 0;
-        RandomAccessFile raf;
+        FileInputStream raf;
         public fileNode(String fileName){
             try {
-                raf = new RandomAccessFile (fileName, "r");
-                fileSize = raf.length();
+                raf = new FileInputStream(fileName);
+                //fileSize = raf.length();
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
         public ByteBuffer getByteBuffer(){
+            /*
             if (curPostion == fileSize){
                 return null;
             }
+            */
             try {
+                if (raf.available() == 0){return null;}
                 raf.read(byte4int);
                 intByteBuffer = ByteBuffer.wrap(byte4int);
                 int tmp = intByteBuffer.getInt();
@@ -63,6 +64,14 @@ public class DefaultPullConsumer implements PullConsumer {
                 e.printStackTrace();
             }
             return null;
+        }
+
+        public void closeFileFD(){
+            try {
+                raf.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
     public DefaultPullConsumer(KeyValue properties) {
@@ -83,14 +92,14 @@ public class DefaultPullConsumer implements PullConsumer {
     public Message poll() {
         if (firstTime){
             index = consumerIndex.getAndIncrement();
-            if (index >= 50){
+            if (index >= step1){
                 try {
                     fuck.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
             }
-            if (index >= 100){
+            if (index >= step2){
                 try {
                     fuck2.await();
                 } catch (InterruptedException e) {
@@ -108,24 +117,27 @@ public class DefaultPullConsumer implements PullConsumer {
                 messagesArray = null;
                 iter = null;
             }
-            if (index > 100){
-                //System.out.println("fuck!");
-            }
             return bytesMessage;
         }else{
             if (channelsList.size() == 0){
-                if (index<50){
+                if (index<step1){
+                    //System.out.println("step1");
                     fuck.countDown();
                 }
-                if (index>=50 && index < 100){
+                if (index < step2){
+                    if (index>step1){
+                        //System.out.println("step2");
+                    }
                     fuck2.countDown();
                 }
                 return null;
             }else{
                 int curSize = channelsList.size();
-                ByteBuffer tmpBuffer = channelsList.get(cur_node%curSize).getByteBuffer();
+                //yuan lai cur_node%curSize
+                ByteBuffer tmpBuffer = channelsList.get(curSize-1).getByteBuffer();
                 if (tmpBuffer == null){
-                    channelsList.remove(cur_node%curSize);
+                    channelsList.get(curSize-1).closeFileFD();
+                    channelsList.remove(curSize-1);
                     return poll();
                 }else{
                     cur_node ++;
