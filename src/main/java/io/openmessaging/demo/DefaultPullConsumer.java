@@ -204,7 +204,7 @@ public class DefaultPullConsumer implements PullConsumer {
             len = byteBuffer.getInt();
             body = new byte[len];
             byteBuffer.get(body);
-            DefaultBytesMessage message = new DefaultBytesMessage(body);
+            OutputMesssage message = new OutputMesssage(body);
             while (true){
                 char tmp = 'a';
                 try{
