@@ -14,10 +14,8 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultPullConsumer implements PullConsumer {
-    private static int step1 = 20;
-    private static int step2 = 40;
-    private static CountDownLatch fuck = new CountDownLatch(step1);
-    private static CountDownLatch fuck2 = new CountDownLatch(step2);
+    private static int step = 40;
+    private static ArrayList<CountDownLatch> fuckList = new ArrayList<>();
     private static AtomicInteger consumerIndex = new AtomicInteger(0);
     private  int index;
     //static Logger logger = LoggerFactory.getLogger(ConsumerTester.class);
@@ -74,6 +72,7 @@ public class DefaultPullConsumer implements PullConsumer {
         }
     }
     public DefaultPullConsumer(KeyValue properties) {
+        fuckList.add(new CountDownLatch(step));
         this.properties = properties;
         parent = properties.getString("STORE_PATH");
     }
@@ -91,16 +90,12 @@ public class DefaultPullConsumer implements PullConsumer {
     public Message poll() {
         if (firstTime){
             index = consumerIndex.getAndIncrement();
-            if (index >= step1){
-                try {
-                    fuck.await();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+            if (index % step == 0){
+                fuckList.add(new CountDownLatch(step));
             }
-            if (index >= step2){
+            if (index/step >= 1){
                 try {
-                    fuck2.await();
+                    fuckList.get(index/step-1).await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -120,13 +115,7 @@ public class DefaultPullConsumer implements PullConsumer {
             return bytesMessage;
         }else{
             if (channelsList.size() == 0){
-                if (index<step1){
-                    System.out.println(index);
-                    fuck.countDown();
-                }
-                if (index < step2){
-                    fuck2.countDown();
-                }
+                fuckList.get(index/step).countDown();
                 return null;
             }else{
                 int curSize = channelsList.size();
