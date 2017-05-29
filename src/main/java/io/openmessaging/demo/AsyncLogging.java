@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by jrj on 17-5-22.
  */
 public class AsyncLogging implements Runnable{
-    private static final int blockingSize = 1024*1024*1;//2MB
+    private static final int blockingSize = 1024*1024/2;//2MB
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
