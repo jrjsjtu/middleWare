@@ -108,7 +108,7 @@ public class DefaultPullConsumer implements PullConsumer {
                 }
             }
             byte4int = new byte[4];
-            byte4message = new byte[1024*1024/2];
+            byte4message = new byte[1024*1024/4];
             intByteBuffer = ByteBuffer.wrap(byte4int);
             tmpFileNode = new fileNode(parent+channelsList.get(0));
             firstTime = false;
