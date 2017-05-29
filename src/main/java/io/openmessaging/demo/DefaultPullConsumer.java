@@ -14,7 +14,7 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultPullConsumer implements PullConsumer {
-    private static int step = 40;
+    private static int step = 30;
     private static ArrayList<CountDownLatch> fuckList = new ArrayList<>();
     private static AtomicInteger consumerIndex = new AtomicInteger(0);
     private  int index;
