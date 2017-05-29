@@ -108,6 +108,9 @@ public class DefaultPullConsumer implements PullConsumer {
                 messagesArray = null;
                 iter = null;
             }
+            if (index > 100){
+                //System.out.println("fuck!");
+            }
             return bytesMessage;
         }else{
             if (channelsList.size() == 0){
