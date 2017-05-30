@@ -21,16 +21,15 @@ public class fileNode {
     ByteBuffer curByteBuffer = null;
     long fileSize;
     long curPostion = 0;
-    RandomAccessFile raf;
+
     FileChannel fc;
     MappedByteBuffer mbb;
     byte[] byte4message = new byte[1024*200];//为了应对大的message提前开好200K的缓存
     public fileNode(String fileName){
         try {
-            raf = new RandomAccessFile (fileName, "r");
-            fc = raf.getChannel();
+            fc = new RandomAccessFile (fileName, "r").getChannel();
             //raf = new FileInputStream(fileName);
-            fileSize = raf.length();
+            fileSize = fc.size();
             if (fileSize<= pageSize){
                 pageSize = (int)fileSize;
             }
@@ -56,7 +55,10 @@ public class fileNode {
         return getMessageList();
     }
 
-    private void getLargerByteBuffer() {
+    private boolean getLargerByteBuffer() {
+        if (curPostion == fileSize){
+            return false;
+        }
         long sizeThisTime;
         if (curPostion+pageSize>fileSize){
             sizeThisTime = fileSize-curPostion;
@@ -79,14 +81,14 @@ public class fileNode {
         mbb.get(byte4message,i,(int)sizeThisTime);
         curByteBuffer =ByteBuffer.wrap(byte4message,0,i+(int)sizeThisTime);
         curPostion += sizeThisTime;
+        return true;
     }
     private BytesMessage getMessageList(){
-        if (curPostion == fileSize){
-            return null;
-        }
         OutputMesssage message = null;
         if(curByteBuffer.remaining()<4) {
-            getLargerByteBuffer();
+            if (getLargerByteBuffer()==false){
+                return null;
+            }
         }
         len = curByteBuffer.getInt();
         while (curByteBuffer.remaining() <= len) {
@@ -242,7 +244,6 @@ public class fileNode {
     public void closeFileFD(){
         try {
             fc.close();
-            raf.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
