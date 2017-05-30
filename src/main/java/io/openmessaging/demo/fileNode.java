@@ -24,7 +24,7 @@ public class fileNode {
 
     FileChannel fc;
     MappedByteBuffer mbb;
-    byte[] byte4message = new byte[1024*200];//为了应对大的message提前开好200K的缓存
+    byte[] byte4message = new byte[1024*512];//为了应对大的message提前开好512K的缓存
     public fileNode(String fileName){
         try {
             fc = new RandomAccessFile (fileName, "r").getChannel();

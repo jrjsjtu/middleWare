@@ -13,6 +13,7 @@ public class DefaultProducer implements Producer {
 
     private KeyValue properties;
     String parent;
+    boolean isStart = true;
     private static AtomicInteger producerNumber = new AtomicInteger(0);
     public DefaultProducer(KeyValue properties) {
         this.properties = properties;
@@ -49,22 +50,26 @@ public class DefaultProducer implements Producer {
 
     @Override
     public void send(Message message) {
-        if (message == null) throw new ClientOMSException("Message should not be null");
-        String topic = message.headers().getString(MessageHeader.TOPIC);
-        String queue = message.headers().getString(MessageHeader.QUEUE);
-        if ((topic == null && queue == null) || (topic != null && queue != null)) {
-            throw new ClientOMSException(String.format("Queue:%s Topic:%s should put one and only one", true, queue));
-        }
+        if(isStart){
+            if (message == null) throw new ClientOMSException("Message should not be null");
+            String topic = message.headers().getString(MessageHeader.TOPIC);
+            String queue = message.headers().getString(MessageHeader.QUEUE);
+            if ((topic == null && queue == null) || (topic != null && queue != null)) {
+                throw new ClientOMSException(String.format("Queue:%s Topic:%s should put one and only one", true, queue));
+            }
 
-        String fileName = null;
-        if (topic != null) {
-            fileName = topic;
-        } else {
-            fileName = queue;
+            String fileName = null;
+            if (topic != null) {
+                fileName = topic;
+            } else {
+                fileName = queue;
+            }
+            AsyncLogging fileManager = getFileManager(fileName);
+            byte[] tmp = ((DefaultBytesMessage)message).getByteArray();
+            fileManager.append(tmp,tmp.length);
+        }else{
+            return;
         }
-        AsyncLogging fileManager = getFileManager(fileName);
-        byte[] tmp = ((DefaultBytesMessage)message).getByteArray();
-        fileManager.append(tmp,tmp.length);
     }
 
     private AsyncLogging getFileManager(String fileName){
@@ -120,6 +125,7 @@ public class DefaultProducer implements Producer {
 
     @Override
     public void flush() {
+        isStart = false;
         producerNumber.decrementAndGet();
         if (producerNumber.get() == 0){
             Iterator iter = fileMap.entrySet().iterator();
@@ -129,11 +135,11 @@ public class DefaultProducer implements Producer {
                 val.signalFlush();
             }
             try {
-                Thread.sleep(3000);
+                //这里留一点时间给最后去持久化，我观察到成功发送就不会kill -9了。不知道阿里那边怎么回事。
+                Thread.sleep(4000);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
     }
-
 }

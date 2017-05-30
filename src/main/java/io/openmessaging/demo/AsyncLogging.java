@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by jrj on 17-5-22.
  */
 public class AsyncLogging implements Runnable{
-    private static final int blockingSize = 1024*128;//2MB
+    private static final int blockingSize = 1024*1024*1;//2MB
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
@@ -60,7 +60,7 @@ public class AsyncLogging implements Runnable{
 
     public void signalFlush(){
         lock.lock();
-        condition.signal();
+        running_ = false;
         lock.unlock();
     }
     //variables for thread
@@ -83,8 +83,8 @@ public class AsyncLogging implements Runnable{
             if (buffers_.size() == 0){
                 try {
                     //反正最后强制flush也不用三秒刷新一次了。。
-                    //condition.await(3000, TimeUnit.MILLISECONDS);
-                    condition.await();
+                    condition.await(3000, TimeUnit.MILLISECONDS);
+                    //condition.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -95,8 +95,13 @@ public class AsyncLogging implements Runnable{
             if (buffersToWrite.size() == 0){continue;}
             writeFile();
         }
+        exchangeBuffer();
+        if (buffersToWrite.size() != 0){
+            writeFile();
+        }
         try {
             out.flush();
+            out.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -135,6 +140,8 @@ public class AsyncLogging implements Runnable{
         buffersToWrite.clear();
     }
 
+
+    //加入这部分是因为byteBuffer的putInt方式与一般的putInt方式不一样，一个是大端，一个是小端。至于哪个是大端哪个是小端我就不知道了。。
     private static byte[] int2byte(int res) {
         byte[] targets = new byte[4];
         targets[0] = (byte) (res >>> 24);// 最低位
