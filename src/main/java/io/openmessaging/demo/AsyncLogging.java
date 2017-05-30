@@ -18,7 +18,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Created by jrj on 17-5-22.
  */
 public class AsyncLogging implements Runnable{
-    private static final int blockingSize = 1024*1024/2;//2MB
+    private static final int blockingSize = 1024*128;//2MB
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
@@ -116,7 +116,6 @@ public class AsyncLogging implements Runnable{
         try {
             for (int i=0;i<buffersToWrite.size();i++){
                 tmpBuffer = buffersToWrite.get(i);
-                out.write(int2byte(tmpBuffer.position()));
                 out.write(tmpBuffer.array(),0,tmpBuffer.position());
             }
             out.flush();

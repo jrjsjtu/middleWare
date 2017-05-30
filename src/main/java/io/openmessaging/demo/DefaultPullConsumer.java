@@ -18,7 +18,7 @@ public class DefaultPullConsumer implements PullConsumer {
     private static int step = 30;
     private static ArrayList<CountDownLatch> fuckList;
     private static AtomicInteger consumerIndex = new AtomicInteger(0);
-    private  int index;
+    private int index;
     //static Logger logger = LoggerFactory.getLogger(ConsumerTester.class);
     private KeyValue properties;
 
@@ -26,76 +26,6 @@ public class DefaultPullConsumer implements PullConsumer {
 
     int topicNumber = 0;
     String parent;
-    byte[] byte4int;
-    byte[] byte4message;
-    class fileNode{
-        ByteBuffer intByteBuffer = null;
-        ByteBuffer curByteBuffer = null;
-        long fileSize;
-        long curPostion = 0;
-        RandomAccessFile raf;
-        FileChannel fc;
-        MappedByteBuffer mbb;
-        public fileNode(String fileName){
-            try {
-                raf = new RandomAccessFile (fileName, "r");
-                fc = raf.getChannel();
-                //raf = new FileInputStream(fileName);
-                fileSize = raf.length();
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-        private ByteBuffer getByteBuffer(){
-            if (curPostion == fileSize){
-                return null;
-            }
-            try {
-                mbb = fc.map(FileChannel.MapMode.READ_ONLY,curPostion,4);
-                mbb.get(byte4int);
-                //raf.read(byte4int);
-                intByteBuffer = ByteBuffer.wrap(byte4int);
-                int tmp = intByteBuffer.getInt();
-                mbb = fc.map(FileChannel.MapMode.READ_ONLY,curPostion+4,tmp);
-                curPostion += (4+tmp);
-                mbb.get(byte4message,0,tmp);
-                //raf.read(byte4message,0,tmp);
-                return ByteBuffer.wrap(byte4message,0,tmp);
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-            return null;
-        }
-
-        public Message getOneMessage(){
-            if (curByteBuffer == null){
-                curByteBuffer = getByteBuffer();
-                if (curByteBuffer == null){
-                    return null;
-                }else{
-                    return getOneMessage();
-                }
-            }else{
-                Message tmpMessage =  getMessageList(curByteBuffer);
-                if (tmpMessage == null){
-                    curByteBuffer = null;
-                    return getOneMessage();
-                }else{
-                    return tmpMessage;
-                }
-            }
-        }
-
-        public void closeFileFD(){
-            try {
-                fc.close();
-                raf.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
     static{
         fuckList = new ArrayList<>();
         fuckList.add(new CountDownLatch(step));
@@ -133,8 +63,6 @@ public class DefaultPullConsumer implements PullConsumer {
                     e.printStackTrace();
                 }
             }
-            byte4int = new byte[4];
-            byte4message = new byte[1024*1024/2];
             tmpFileNode = new fileNode(parent+channelsList.get(0));
             firstTime = false;
         }
@@ -144,10 +72,8 @@ public class DefaultPullConsumer implements PullConsumer {
             return singleMessage;
         }else{
             if (channelsList.size() == 0){
-                System.gc();
                 fuckList.get(index/step).countDown();
-                tmpFileNode = null;
-                byte4int = null;byte4message=null;channelsList = null;
+                tmpFileNode = null;channelsList = null;
                 return null;
             }else{
                 tmpFileNode.closeFileFD();
@@ -176,13 +102,15 @@ public class DefaultPullConsumer implements PullConsumer {
         defaultPullConsumer.attachQueue(Constants.QUEUE_PRE+1,topList);
         int a = 0;
         while (true){
-            if (defaultPullConsumer.poll() == null){
+            BytesMessage bytesMessage = (BytesMessage) defaultPullConsumer.poll();
+            if (bytesMessage == null){
                 break;
             }else{
+                //System.out.println(new String(bytesMessage.getBody()));
                 a ++;
             }
         }
-        //System.out.println(a);
+        System.out.println(a);
     }
     @Override
     public Message poll(KeyValue properties) {
@@ -221,97 +149,4 @@ public class DefaultPullConsumer implements PullConsumer {
         }
     }
 
-    int len;
-    byte[] body;char tmp;
-    int strlen;byte[] tmpkey,tmpvalue;String key,valuestr;
-    int headerInt;long headerLong;double headerDouble;
-    private BytesMessage getMessageList(ByteBuffer byteBuffer){
-        OutputMesssage message = null;
-         if(byteBuffer.hasRemaining()){
-            len = byteBuffer.getInt();
-            body = new byte[len];
-            try{
-                byteBuffer.get(body);
-            }catch (Exception e){
-                e.printStackTrace();
-            }
-             message = new OutputMesssage(body);
-            while (true){
-                tmp = byteBuffer.getChar();
-                if (tmp == ' ') break;
-                switch (tmp){
-                    case '1':
-                        headerInt = byteBuffer.getInt();
-                        strlen = byteBuffer.getInt();
-                        tmpkey = new byte[strlen];
-                        byteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putHeaders(key,headerInt);break;
-                    case '2':
-                        headerLong = byteBuffer.getLong();
-                        strlen = byteBuffer.getInt();
-                        tmpkey = new byte[strlen];
-                        byteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putHeaders(key,headerLong);break;
-                    case '3':
-                        headerDouble = byteBuffer.getDouble();
-                        strlen = byteBuffer.getInt();
-                        tmpkey = new byte[strlen];
-                        byteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putHeaders(key,headerDouble);break;
-                    case '4':
-                        strlen = byteBuffer.getInt();
-                        tmpvalue = new byte[strlen];
-                        byteBuffer.get(tmpvalue);
-                        valuestr = new String(tmpvalue);
-                        strlen = byteBuffer.getInt();
-                        tmpkey = new byte[strlen];
-                        byteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putHeaders(key,valuestr);break;
-                }
-            }
-
-            while (true){
-                tmp = byteBuffer.getChar();
-                if (tmp == ' ') break;
-                switch (tmp){
-                    case '1':
-                        headerInt = byteBuffer.getInt();
-                        strlen = byteBuffer.getInt();
-                        tmpkey = new byte[strlen];
-                        byteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putProperties(key,headerInt);break;
-                    case '2':
-                        headerLong = byteBuffer.getLong();
-                        strlen = byteBuffer.getInt();
-                        tmpkey = new byte[strlen];
-                        byteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putProperties(key,headerLong);break;
-                    case '3':
-                        headerDouble = byteBuffer.getDouble();
-                        strlen = byteBuffer.getInt();
-                        tmpkey = new byte[strlen];
-                        byteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putProperties(key,headerDouble);break;
-                    case '4':
-                        strlen = byteBuffer.getInt();
-                        tmpvalue = new byte[strlen];
-                        byteBuffer.get(tmpvalue);
-                        valuestr = new String(tmpvalue);
-                        strlen = byteBuffer.getInt();
-                        tmpkey = new byte[strlen];
-                        byteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putProperties(key,valuestr);break;
-                }
-            }
-        }
-        return message;
-    }
 }

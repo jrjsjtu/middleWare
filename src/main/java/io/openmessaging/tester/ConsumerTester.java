@@ -85,12 +85,11 @@ public class ConsumerTester {
     }
 
     public static void main(String[] args) throws Exception {
-
+        /*
         Thread.sleep(10000);
         int a =0;
         System.out.println(a);
-        Thread.sleep(10000);
-
+*/
         Thread[] ts = new Thread[Constants.CON_NUM];
         List<String> topList= new ArrayList<>();
         //topList.add(Constants.TOPIC_PRE + 0);
@@ -111,7 +110,7 @@ public class ConsumerTester {
 
         for (int i = 0; i < ts.length; i++) {
             topList= new ArrayList<>();
-            topList.add(Constants.TOPIC_PRE + i);
+            topList.add(Constants.TOPIC_PRE + 1);
             ts[i] = new ConsumerTask(Constants.QUEUE_PRE + i, topList);
         }
         for (int i = 0; i < ts.length; i++) {

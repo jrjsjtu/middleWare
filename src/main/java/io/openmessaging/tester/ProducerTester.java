@@ -64,8 +64,8 @@ public class ProducerTester {
                         message = producer.createBytesMessageToQueue(queueOrTopic, (label + "asasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasas_" + offsets.get(queueOrTopic)).getBytes());
 
                     } else {
-                        queueOrTopic = "TOPIC_" + random.nextInt(120);
-                        //queueOrTopic = "TOPIC_" + 1;
+                        //queueOrTopic = "TOPIC_" + random.nextInt(120);
+                        queueOrTopic = "TOPIC_" + 1;
                         message = producer.createBytesMessageToTopic(queueOrTopic, (label + "_" + offsets.get(queueOrTopic)).getBytes());
 
                     }
