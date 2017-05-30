@@ -149,9 +149,6 @@ public class DefaultBytesMessage implements BytesMessage {
         return 0;
     }
     public void clear(){}
-    public Buffer setHeaders(KeyValue KV){
-        return new Buffer();
-   }
     public void setByteCount(int byteCount){
     }
 }
