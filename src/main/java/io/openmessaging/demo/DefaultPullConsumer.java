@@ -115,8 +115,6 @@ public class DefaultPullConsumer implements PullConsumer {
         return properties;
     }
 
-    ArrayList<BytesMessage> messagesArray = null;
-    Iterator iter;
     boolean firstTime = true;
     fileNode tmpFileNode;
     Message singleMessage;
@@ -146,7 +144,10 @@ public class DefaultPullConsumer implements PullConsumer {
             return singleMessage;
         }else{
             if (channelsList.size() == 0){
+                System.gc();
                 fuckList.get(index/step).countDown();
+                tmpFileNode = null;
+                byte4int = null;byte4message=null;channelsList = null;
                 return null;
             }else{
                 tmpFileNode.closeFileFD();
@@ -220,11 +221,12 @@ public class DefaultPullConsumer implements PullConsumer {
         }
     }
 
+    int len;
+    byte[] body;char tmp;
+    int strlen;byte[] tmpkey,tmpvalue;String key,valuestr;
+    int headerInt;long headerLong;double headerDouble;
     private BytesMessage getMessageList(ByteBuffer byteBuffer){
         OutputMesssage message = null;
-        int len;
-        byte[] body;
-        int strlen,vallen;byte[] tmpkey,tmpvalue;String key,valuestr;
          if(byteBuffer.hasRemaining()){
             len = byteBuffer.getInt();
             body = new byte[len];
@@ -235,25 +237,25 @@ public class DefaultPullConsumer implements PullConsumer {
             }
             message = new OutputMesssage(body);
             while (true){
-                char tmp = byteBuffer.getChar();
+                tmp = byteBuffer.getChar();
                 if (tmp == ' ') break;
                 switch (tmp){
                     case '1':
-                        int headerInt = byteBuffer.getInt();
+                        headerInt = byteBuffer.getInt();
                         strlen = byteBuffer.getInt();
                         tmpkey = new byte[strlen];
                         byteBuffer.get(tmpkey);
                         key = new String(tmpkey);
                         message.putHeaders(key,headerInt);break;
                     case '2':
-                        long headerLong = byteBuffer.getLong();
+                        headerLong = byteBuffer.getLong();
                         strlen = byteBuffer.getInt();
                         tmpkey = new byte[strlen];
                         byteBuffer.get(tmpkey);
                         key = new String(tmpkey);
                         message.putHeaders(key,headerLong);break;
                     case '3':
-                        double headerDouble = byteBuffer.getDouble();
+                        headerDouble = byteBuffer.getDouble();
                         strlen = byteBuffer.getInt();
                         tmpkey = new byte[strlen];
                         byteBuffer.get(tmpkey);
@@ -273,25 +275,25 @@ public class DefaultPullConsumer implements PullConsumer {
             }
 
             while (true){
-                char tmp = byteBuffer.getChar();
+                tmp = byteBuffer.getChar();
                 if (tmp == ' ') break;
                 switch (tmp){
                     case '1':
-                        int headerInt = byteBuffer.getInt();
+                        headerInt = byteBuffer.getInt();
                         strlen = byteBuffer.getInt();
                         tmpkey = new byte[strlen];
                         byteBuffer.get(tmpkey);
                         key = new String(tmpkey);
                         message.putProperties(key,headerInt);break;
                     case '2':
-                        long headerLong = byteBuffer.getLong();
+                        headerLong = byteBuffer.getLong();
                         strlen = byteBuffer.getInt();
                         tmpkey = new byte[strlen];
                         byteBuffer.get(tmpkey);
                         key = new String(tmpkey);
                         message.putProperties(key,headerLong);break;
                     case '3':
-                        double headerDouble = byteBuffer.getDouble();
+                        headerDouble = byteBuffer.getDouble();
                         strlen = byteBuffer.getInt();
                         tmpkey = new byte[strlen];
                         byteBuffer.get(tmpkey);
@@ -311,7 +313,5 @@ public class DefaultPullConsumer implements PullConsumer {
             }
         }
         return message;
-    }
-    public void addBuffer(ArrayList<BytesMessage> messageList){
     }
 }
