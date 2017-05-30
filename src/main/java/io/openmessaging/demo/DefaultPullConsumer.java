@@ -235,7 +235,8 @@ public class DefaultPullConsumer implements PullConsumer {
             }catch (Exception e){
                 e.printStackTrace();
             }
-            message = new OutputMesssage(body);
+            //message = new OutputMesssage(body);
+             message = new OutputMesssage("test reason for oom".getBytes());
             while (true){
                 tmp = byteBuffer.getChar();
                 if (tmp == ' ') break;
