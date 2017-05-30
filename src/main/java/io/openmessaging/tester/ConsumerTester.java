@@ -66,7 +66,7 @@ public class ConsumerTester {
                     a ++;
                     BytesMessage message = (BytesMessage) consumer.poll();
                     if (message == null){
-                        //System.out.println(a);
+                        System.out.println(a);
                         break;
                     }
                     //System.out.println(new String(message.getBody()));
@@ -90,13 +90,14 @@ public class ConsumerTester {
         int a =0;
         System.out.println(a);
         Thread.sleep(10000);
-        */
+    */
         Thread[] ts = new Thread[Constants.CON_NUM];
         List<String> topList= new ArrayList<>();
         //topList.add(Constants.TOPIC_PRE + 0);
         //topList.add(Constants.TOPIC_PRE + 1);
         for (int i = 0; i < ts.length; i++) {
             topList= new ArrayList<>();
+            topList.add(Constants.TOPIC_PRE + 1);
             topList.add(Constants.TOPIC_PRE + i);
             ts[i] = new ConsumerTask(Constants.QUEUE_PRE + i, topList);
         }
@@ -107,12 +108,26 @@ public class ConsumerTester {
         for (int i = 0; i < ts.length; i++) {
             ts[i].join();
         }
+
+        for (int i = 0; i < ts.length; i++) {
+            topList= new ArrayList<>();
+            topList.add(Constants.TOPIC_PRE + i);
+            ts[i] = new ConsumerTask(Constants.QUEUE_PRE + i, topList);
+        }
+        for (int i = 0; i < ts.length; i++) {
+            ts[i].start();
+        }
+        for (int i = 0; i < ts.length; i++) {
+            ts[i].join();
+        }
+
         int pullNum = 0;
         for (int i = 0; i < ts.length; i++) {
             pullNum += ((ConsumerTask) ts[i]).getPullNum();
         }
         long end = System.currentTimeMillis();
         System.out.println(end-start);
+        Thread.sleep(10000000);
         logger.info("Consumer Finished, Cost {} ms, Num {}", end - start, pullNum);
     }
 }

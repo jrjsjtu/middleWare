@@ -47,11 +47,10 @@ public class ProducerTester {
                 logger.error("please check the package name and class name:", e);
             }
             //init offsets
-            for (int i = 0; i < 10; i++) {
+            for (int i = 0; i < 120; i++) {
                 offsets.put("TOPIC_" + i, 0);
                 offsets.put("QUEUE_" + i, 0);
             }
-
         }
 
         @Override
@@ -61,12 +60,12 @@ public class ProducerTester {
                     String queueOrTopic;
                     Message message = null;
                     if (sendNum % 10 == 0) {
-                        queueOrTopic = "QUEUE_" + random.nextInt(10);
+                        queueOrTopic = "QUEUE_" + random.nextInt(120);
                         message = producer.createBytesMessageToQueue(queueOrTopic, (label + "asasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasas_" + offsets.get(queueOrTopic)).getBytes());
 
                     } else {
-                        //queueOrTopic = "TOPIC_" + random.nextInt(10);
-                        queueOrTopic = "TOPIC_" + 1;
+                        queueOrTopic = "TOPIC_" + random.nextInt(120);
+                        //queueOrTopic = "TOPIC_" + 1;
                         message = producer.createBytesMessageToTopic(queueOrTopic, (label + "_" + offsets.get(queueOrTopic)).getBytes());
 
                     }
@@ -89,6 +88,7 @@ public class ProducerTester {
     }
 
     public static void main(String[] args) throws Exception {
+        //Thread.sleep(10000);
         Thread[] ts = new Thread[Constants.PRO_NUM];
         for (int i = 0; i < ts.length; i++) {
             ts[i] = new ProducerTask(Constants.PRO_PRE + i);
