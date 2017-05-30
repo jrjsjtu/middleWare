@@ -20,21 +20,20 @@ public class DefaultPullConsumer implements PullConsumer {
     private  int index;
     //static Logger logger = LoggerFactory.getLogger(ConsumerTester.class);
     private KeyValue properties;
-    //通知队列
 
     private ArrayList<String> channelsList = new ArrayList<>();
+
+    int topicNumber = 0;
+    String parent;
     byte[] byte4int;
     byte[] byte4message;
-
-    ByteBuffer intByteBuffer;
-    int topicNumber = 0;
-    int cur_node = 0;
-    String parent;
     class fileNode{
+        ByteBuffer intByteBuffer = null;
+        ByteBuffer curByteBuffer = null;
         long fileSize;
         long curPostion = 0;
         RandomAccessFile raf;
-        //FileInputStream raf;
+
         public fileNode(String fileName){
             try {
                 raf = new RandomAccessFile (fileName, "r");
@@ -45,7 +44,7 @@ public class DefaultPullConsumer implements PullConsumer {
             }
         }
 
-        public ByteBuffer getByteBuffer(){
+        private ByteBuffer getByteBuffer(){
             if (curPostion == fileSize){
                 return null;
             }
@@ -60,6 +59,25 @@ public class DefaultPullConsumer implements PullConsumer {
                 e.printStackTrace();
             }
             return null;
+        }
+
+        public Message getOneMessage(){
+            if (curByteBuffer == null){
+                curByteBuffer = getByteBuffer();
+                if (curByteBuffer == null){
+                    return null;
+                }else{
+                    return getOneMessage();
+                }
+            }else{
+                Message tmpMessage =  getMessageList(curByteBuffer);
+                if (tmpMessage == null){
+                    curByteBuffer = null;
+                    return getOneMessage();
+                }else{
+                    return tmpMessage;
+                }
+            }
         }
 
         public void closeFileFD(){
@@ -93,8 +111,10 @@ public class DefaultPullConsumer implements PullConsumer {
     Iterator iter;
     boolean firstTime = true;
     fileNode tmpFileNode;
+    Message singleMessage;
     @Override
     public Message poll() {
+        //这里用来限制统一时刻运行的线程数
         if (firstTime){
             index = consumerIndex.getAndIncrement();
             if (index % step == 0){
@@ -108,37 +128,25 @@ public class DefaultPullConsumer implements PullConsumer {
                 }
             }
             byte4int = new byte[4];
-            byte4message = new byte[1024*1024/4];
-            intByteBuffer = ByteBuffer.wrap(byte4int);
+            byte4message = new byte[1024*1024/2];
             tmpFileNode = new fileNode(parent+channelsList.get(0));
             firstTime = false;
         }
-        if (messagesArray != null){
-            BytesMessage bytesMessage = (BytesMessage) iter.next();
-            if (!iter.hasNext()){
-                messagesArray.clear();
-                messagesArray = null;
-                iter = null;
-            }
-            return bytesMessage;
+        //到这里没一批次只能运行step个线程
+        singleMessage = tmpFileNode.getOneMessage();
+        if (singleMessage != null){
+            return singleMessage;
         }else{
             if (channelsList.size() == 0){
                 fuckList.get(index/step).countDown();
                 return null;
             }else{
-                ByteBuffer tmpBuffer = tmpFileNode.getByteBuffer();
-                if (tmpBuffer == null){
-                    tmpFileNode.closeFileFD();
-                    channelsList.remove(0);
-                    if (channelsList.size() >0){
-                        tmpFileNode = new fileNode(parent+channelsList.get(0));
-                    }
-                    return poll();
-                }else{
-                    messagesArray = getMessageList(tmpBuffer);
-                    iter = messagesArray.iterator();
-                    return poll();
+                tmpFileNode.closeFileFD();
+                channelsList.remove(0);
+                if (channelsList.size() >0){
+                    tmpFileNode = new fileNode(parent+channelsList.get(0));
                 }
+                return poll();
             }
         }
     }
@@ -204,16 +212,16 @@ public class DefaultPullConsumer implements PullConsumer {
         }
     }
 
-    private ArrayList<BytesMessage> getMessageList(ByteBuffer byteBuffer){
-        ArrayList<BytesMessage> messagesArray = new ArrayList<>();
+    private BytesMessage getMessageList(ByteBuffer byteBuffer){
+        OutputMesssage message = null;
         int len;
         byte[] body;
         int strlen,vallen;byte[] tmpkey,tmpvalue;String key,valuestr;
-        while (byteBuffer.hasRemaining()){
+         if(byteBuffer.hasRemaining()){
             len = byteBuffer.getInt();
             body = new byte[len];
             byteBuffer.get(body);
-            OutputMesssage message = new OutputMesssage(body);
+            message = new OutputMesssage(body);
             while (true){
                 char tmp = 'a';
                 try{
@@ -294,9 +302,8 @@ public class DefaultPullConsumer implements PullConsumer {
                         message.putProperties(key,valuestr);break;
                 }
             }
-            messagesArray.add(message);
         }
-        return messagesArray;
+        return message;
     }
     public void addBuffer(ArrayList<BytesMessage> messageList){
     }
