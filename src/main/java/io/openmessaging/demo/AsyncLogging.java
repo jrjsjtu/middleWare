@@ -61,6 +61,7 @@ public class AsyncLogging implements Runnable{
     public void signalFlush(){
         lock.lock();
         running_ = false;
+        condition.signal();
         lock.unlock();
     }
     //variables for thread

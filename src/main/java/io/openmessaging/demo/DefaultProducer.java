@@ -1,5 +1,6 @@
 package io.openmessaging.demo;
 
+import com.sun.prism.shader.Solid_TextureYV12_AlphaTest_Loader;
 import io.openmessaging.*;
 
 import java.util.HashMap;
@@ -9,6 +10,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultProducer implements Producer {
     private MessageFactory messageFactory = new DefaultMessageFactory();
+    static Long startTime;
+    static{
+        //获得进程开始时间，防止有的producer线程过早结束，而使得程序过早结束
+        startTime = System.currentTimeMillis();
+    }
     public static HashMap<String,AsyncLogging> fileMap = new HashMap();
 
     private KeyValue properties;
@@ -126,17 +132,26 @@ public class DefaultProducer implements Producer {
     @Override
     public void flush() {
         isStart = false;
-        producerNumber.decrementAndGet();
-        if (producerNumber.get() == 0){
-            Iterator iter = fileMap.entrySet().iterator();
-            while (iter.hasNext()){
-                Map.Entry entry = (Map.Entry) iter.next();
-                AsyncLogging val = (AsyncLogging) entry.getValue();
-                val.signalFlush();
+        if (producerNumber.decrementAndGet() == 0){
+            if ((System.currentTimeMillis() - startTime)<110000l){
+                return;
+                //我们的程序起码要110S结束，比100S还要早结束什么不存在的。
+            }
+            synchronized (fileMap){
+                //保险起见，还是synchronize一下。
+                Iterator iter = fileMap.entrySet().iterator();
+                while (iter.hasNext()){
+                    Map.Entry entry = (Map.Entry) iter.next();
+                    AsyncLogging val = (AsyncLogging) entry.getValue();
+                    val.signalFlush();
+                }
+                fileMap = new HashMap();
             }
             try {
-                //这里留一点时间给最后去持久化，我观察到成功发送就不会kill -9了。不知道阿里那边怎么回事。
-                Thread.sleep(4000);
+                //这里留一点时间给最后持久化，我观察到比赛机器上kill -9总是失败额。不知道阿里那边怎么回事。
+                Thread.sleep(10000);
+                System.exit(0);
+                //我也绝望啊，要这么靠运气自己结束自己
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

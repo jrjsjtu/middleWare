@@ -14,7 +14,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ProducerTester {
-
     static Logger logger = LoggerFactory.getLogger(ProducerTester.class);
     //0表示默认;
     static AtomicInteger state = new AtomicInteger(0);
@@ -60,14 +59,13 @@ public class ProducerTester {
                     String queueOrTopic;
                     Message message = null;
                     if (sendNum % 10 == 0) {
-                        queueOrTopic = "QUEUE_" + random.nextInt(120);
+                        queueOrTopic = "QUEUE_" + random.nextInt(10);
                         message = producer.createBytesMessageToQueue(queueOrTopic, (label + "asasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasasas_" + offsets.get(queueOrTopic)).getBytes());
 
                     } else {
-                        //queueOrTopic = "TOPIC_" + random.nextInt(120);
-                        queueOrTopic = "TOPIC_" + 1;
+                        queueOrTopic = "TOPIC_" + random.nextInt(10);
+                        //queueOrTopic = "TOPIC_" + 1;
                         message = producer.createBytesMessageToTopic(queueOrTopic, (label + "_" + offsets.get(queueOrTopic)).getBytes());
-
                     }
 //                    logger.debug("queueOrTopic:{} offset:{}", queueOrTopic, label + "_" + offsets.get(queueOrTopic));
                     offsets.put(queueOrTopic, offsets.get(queueOrTopic) + 1);
