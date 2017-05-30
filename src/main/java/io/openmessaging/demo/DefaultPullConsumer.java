@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.*;
 import java.util.concurrent.*;
@@ -33,10 +34,12 @@ public class DefaultPullConsumer implements PullConsumer {
         long fileSize;
         long curPostion = 0;
         RandomAccessFile raf;
-
+        FileChannel fc;
+        MappedByteBuffer mbb;
         public fileNode(String fileName){
             try {
                 raf = new RandomAccessFile (fileName, "r");
+                fc = raf.getChannel();
                 //raf = new FileInputStream(fileName);
                 fileSize = raf.length();
             } catch (Exception e) {
@@ -49,11 +52,15 @@ public class DefaultPullConsumer implements PullConsumer {
                 return null;
             }
             try {
-                raf.read(byte4int);
+                mbb = fc.map(FileChannel.MapMode.READ_ONLY,curPostion,4);
+                mbb.get(byte4int);
+                //raf.read(byte4int);
                 intByteBuffer = ByteBuffer.wrap(byte4int);
                 int tmp = intByteBuffer.getInt();
+                mbb = fc.map(FileChannel.MapMode.READ_ONLY,curPostion+4,tmp);
                 curPostion += (4+tmp);
-                raf.read(byte4message,0,tmp);
+                mbb.get(byte4message,0,tmp);
+                //raf.read(byte4message,0,tmp);
                 return ByteBuffer.wrap(byte4message,0,tmp);
             } catch (Exception e) {
                 e.printStackTrace();
@@ -82,6 +89,7 @@ public class DefaultPullConsumer implements PullConsumer {
 
         public void closeFileFD(){
             try {
+                fc.close();
                 raf.close();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -220,15 +228,14 @@ public class DefaultPullConsumer implements PullConsumer {
          if(byteBuffer.hasRemaining()){
             len = byteBuffer.getInt();
             body = new byte[len];
-            byteBuffer.get(body);
+            try{
+                byteBuffer.get(body);
+            }catch (Exception e){
+                e.printStackTrace();
+            }
             message = new OutputMesssage(body);
             while (true){
-                char tmp = 'a';
-                try{
-                    tmp = byteBuffer.getChar();
-                }catch (Exception e){
-                    e.printStackTrace();
-                }
+                char tmp = byteBuffer.getChar();
                 if (tmp == ' ') break;
                 switch (tmp){
                     case '1':

@@ -85,12 +85,12 @@ public class ConsumerTester {
     }
 
     public static void main(String[] args) throws Exception {
-        /*
+
         Thread.sleep(10000);
         int a =0;
         System.out.println(a);
         Thread.sleep(10000);
-    */
+
         Thread[] ts = new Thread[Constants.CON_NUM];
         List<String> topList= new ArrayList<>();
         //topList.add(Constants.TOPIC_PRE + 0);
