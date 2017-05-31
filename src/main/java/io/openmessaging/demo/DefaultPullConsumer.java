@@ -65,7 +65,7 @@ public class DefaultPullConsumer implements PullConsumer {
             }
         }
     }
-
+    
     @Override
     public Message poll(KeyValue properties) {
         throw new UnsupportedOperationException("Unsupported");
