@@ -5,6 +5,7 @@ import io.openmessaging.*;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultProducer implements Producer {
@@ -142,6 +143,10 @@ public class DefaultProducer implements Producer {
             */
             synchronized (fileMap){
                 //保险起见，还是synchronize一下。
+                if (producerNumber.get()!=0){
+                    return;
+                }
+                AsyncLogging.endSignal = new CountDownLatch(fileMap.size());
                 Iterator iter = fileMap.entrySet().iterator();
                 while (iter.hasNext()){
                     Map.Entry entry = (Map.Entry) iter.next();
@@ -152,7 +157,7 @@ public class DefaultProducer implements Producer {
             }
             try {
                 //这里留一点时间给最后持久化，我观察到比赛机器上kill -9总是失败额。不知道阿里那边怎么回事。
-                Thread.sleep(5000);
+                AsyncLogging.endSignal.await();
                 System.out.println("here we exit");
                 if (producerNumber.get() == 0){
                     System.exit(0);

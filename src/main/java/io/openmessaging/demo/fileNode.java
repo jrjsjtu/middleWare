@@ -24,7 +24,7 @@ public class fileNode {
 
     FileChannel fc;
     MappedByteBuffer mbb;
-    byte[] byte4message = new byte[1024*512];//为了应对大的message提前开好512K的缓存
+    byte[] byte4message = new byte[1024*1024];//为了应对大的message提前开好512K的缓存
     public fileNode(String fileName){
         try {
             fc = new RandomAccessFile (fileName, "r").getChannel();
@@ -78,7 +78,13 @@ public class fileNode {
             byte4message[i] = curByteBuffer.get();
             i++;
         }
-        mbb.get(byte4message,i,(int)sizeThisTime);
+        try{
+            mbb.get(byte4message,i,(int)sizeThisTime);
+        }catch(Exception e){
+            System.out.println(i);
+            System.out.println(sizeThisTime);
+            e.printStackTrace();
+        }
         curByteBuffer =ByteBuffer.wrap(byte4message,0,i+(int)sizeThisTime);
         curPostion += sizeThisTime;
         return true;

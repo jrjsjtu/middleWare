@@ -9,6 +9,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.Queue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -19,6 +20,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class AsyncLogging implements Runnable{
     //use one thread to manage multiple files
+    public static CountDownLatch endSignal;
     private static final int blockingSize = 1024*1024/2;//2MB
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
@@ -107,6 +109,7 @@ public class AsyncLogging implements Runnable{
         } catch (IOException e) {
             e.printStackTrace();
         }
+        endSignal.countDown();
     }
 
     private void exchangeBuffer(){
