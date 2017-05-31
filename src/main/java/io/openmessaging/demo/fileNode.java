@@ -105,6 +105,7 @@ public class fileNode {
             getLargerByteBuffer();
         }
         body = new byte[len];
+        curByteBuffer.get(body);
         //System.out.println(curByteBuffer.limit());
         message = new OutputMesssage(body);
         //System.out.println(new String(body));
