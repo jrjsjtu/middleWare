@@ -76,13 +76,13 @@ public class fileNode {
         int i=0;
         while (curByteBuffer.hasRemaining()){
             byte4message[i] = curByteBuffer.get();
+            //zhelikeyi youhua
             i++;
         }
         try{
             mbb.get(byte4message,i,(int)sizeThisTime);
         }catch(Exception e){
-            System.out.println(i);
-            System.out.println(sizeThisTime);
+            System.out.println(i + "  "+ sizeThisTime+" "+ len);
             e.printStackTrace();
         }
         curByteBuffer =ByteBuffer.wrap(byte4message,0,i+(int)sizeThisTime);
