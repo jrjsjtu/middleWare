@@ -132,9 +132,12 @@ public class DefaultProducer implements Producer {
     @Override
     public void flush() {
         isStart = false;
-        if (producerNumber.decrementAndGet() == 0){
+        int  aaa = producerNumber.decrementAndGet();
+        //System.out.println(aaa);
+        if (aaa == 0){
+            /*
             if ((System.currentTimeMillis() - startTime)<110000l){
-                return;
+                //return;
                 //我们的程序起码要110S结束，比100S还要早结束什么不存在的。
             }
             synchronized (fileMap){
@@ -145,12 +148,16 @@ public class DefaultProducer implements Producer {
                     AsyncLogging val = (AsyncLogging) entry.getValue();
                     val.signalFlush();
                 }
-                fileMap = new HashMap();
+                //fileMap = new HashMap();
             }
+            */
             try {
                 //这里留一点时间给最后持久化，我观察到比赛机器上kill -9总是失败额。不知道阿里那边怎么回事。
                 Thread.sleep(10000);
-                System.exit(0);
+                System.out.println("here we exit");
+                if (producerNumber.get() == 0){
+                    System.exit(0);
+                }
                 //我也绝望啊，要这么靠运气自己结束自己
             } catch (InterruptedException e) {
                 e.printStackTrace();
