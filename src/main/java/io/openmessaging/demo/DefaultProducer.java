@@ -3,6 +3,8 @@ package io.openmessaging.demo;
 import io.openmessaging.*;
 
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultProducer implements Producer {
@@ -137,6 +139,7 @@ public class DefaultProducer implements Producer {
                 //return;
                 //我们的程序起码要110S结束，比100S还要早结束什么不存在的。
             }
+            */
             synchronized (fileMap){
                 //保险起见，还是synchronize一下。
                 Iterator iter = fileMap.entrySet().iterator();
@@ -147,10 +150,9 @@ public class DefaultProducer implements Producer {
                 }
                 //fileMap = new HashMap();
             }
-            */
             try {
                 //这里留一点时间给最后持久化，我观察到比赛机器上kill -9总是失败额。不知道阿里那边怎么回事。
-                Thread.sleep(10000);
+                Thread.sleep(5000);
                 System.out.println("here we exit");
                 if (producerNumber.get() == 0){
                     System.exit(0);

@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class AsyncLogging implements Runnable{
     //use one thread to manage multiple files
-    private static final int blockingSize = 1024*1024*1;//2MB
+    private static final int blockingSize = 1024*1024/2;//2MB
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
