@@ -53,6 +53,9 @@ public class DefaultBytesMessage implements BytesMessage {
         if (headerMap == null) headerMap = new HashMap<>(4);
         byte[] tmp = typeStruct.getByteArray(value,key);
         size += tmp.length;
+        if (headerMap.get(key) != null){
+            size -= headerMap.get(key).length;
+        }
         headerMap.put(key, tmp);
         headers.put(key,value);
         return this;
@@ -62,15 +65,21 @@ public class DefaultBytesMessage implements BytesMessage {
         if (headerMap == null) headerMap = new HashMap(4);
         byte[] tmp = typeStruct.getByteArray(value,key);
         size += tmp.length;
+        if (headerMap.get(key) != null){
+            size -= headerMap.get(key).length;
+        }
         headerMap.put(key, tmp);
         headers.put(key,value);
         return this;
     }
-
+    //发现测试的时候回望里面插入两个key相同的值，那就很尴尬了
     @Override public Message putHeaders(String key, double value) {
         if (headerMap == null) headerMap = new HashMap<>(4);
         byte[] tmp = typeStruct.getByteArray(value,key);
         size += tmp.length;
+        if (headerMap.get(key) != null){
+            size -= headerMap.get(key).length;
+        }
         headerMap.put(key, tmp);
         headers.put(key,value);
         return this;
@@ -80,6 +89,9 @@ public class DefaultBytesMessage implements BytesMessage {
         if (headerMap == null) headerMap = new HashMap<>(4);
         byte[] tmp = typeStruct.getByteArray(value,key);
         size += tmp.length;
+        if (headerMap.get(key) != null){
+            size -= headerMap.get(key).length;
+        }
         headerMap.put(key, tmp);
         headers.put(key,value);
         return this;
@@ -89,6 +101,9 @@ public class DefaultBytesMessage implements BytesMessage {
         if (propertiesMap == null) propertiesMap = new HashMap<>(4);
         byte[] tmp = typeStruct.getByteArray(value,key);
         size += tmp.length;
+        if (propertiesMap.get(key) != null){
+            size -= propertiesMap.get(key).length;
+        }
         propertiesMap.put(key, tmp);
         properties.put(key,value);
         return this;
@@ -98,6 +113,9 @@ public class DefaultBytesMessage implements BytesMessage {
         if (propertiesMap == null) propertiesMap = new HashMap<>(4);
         byte[] tmp = typeStruct.getByteArray(value,key);
         size += tmp.length;
+        if (propertiesMap.get(key) != null){
+            size -= propertiesMap.get(key).length;
+        }
         propertiesMap.put(key, tmp);
         properties.put(key,value);
         return this;
@@ -107,6 +125,9 @@ public class DefaultBytesMessage implements BytesMessage {
         if (propertiesMap == null) propertiesMap = new HashMap<>(4);
         byte[] tmp = typeStruct.getByteArray(value,key);
         size += tmp.length;
+        if (propertiesMap.get(key) != null){
+            size -= propertiesMap.get(key).length;
+        }
         propertiesMap.put(key, tmp);
         properties.put(key,value);
         return this;
@@ -116,6 +137,9 @@ public class DefaultBytesMessage implements BytesMessage {
         if (propertiesMap == null) propertiesMap = new HashMap<>(4);
         byte[] tmp = typeStruct.getByteArray(value,key);
         size += tmp.length;
+        if (propertiesMap.get(key) != null){
+            size -= propertiesMap.get(key).length;
+        }
         propertiesMap.put(key, tmp);
         properties.put(key,value);
         return this;

@@ -17,14 +17,14 @@ public class fileNode {
     byte[] body;char tmp;
     int strlen;byte[] tmpkey,tmpvalue;String key,valuestr;
     int headerInt;long headerLong;double headerDouble;
-    private int pageSize = 1024*4;
+    private int pageSize = 1024*16;//pagesize太小反而会OOM
     ByteBuffer curByteBuffer = null;
     long fileSize;
     long curPostion = 0;
 
     FileChannel fc;
     MappedByteBuffer mbb;
-    byte[] byte4message = new byte[1024*1024];//为了应对大的message提前开好512K的缓存
+    byte[] byte4message = new byte[1024*512];//为了应对大的message提前开好512K的缓存
     public fileNode(String fileName){
         try {
             fc = new RandomAccessFile (fileName, "r").getChannel();
@@ -74,10 +74,14 @@ public class fileNode {
             e.printStackTrace();
         }
         int i=0;
-        while (curByteBuffer.hasRemaining()){
-            byte4message[i] = curByteBuffer.get();
-            //zhelikeyi youhua
-            i++;
+        if (curByteBuffer.position() == 0){
+            i = curByteBuffer.limit();
+            //System.out.println(curByteBuffer.limit());
+        }else{
+            while(curByteBuffer.hasRemaining()){
+                byte4message[i] = curByteBuffer.get();
+                i++;
+            }
         }
         try{
             mbb.get(byte4message,i,(int)sizeThisTime);
@@ -85,7 +89,7 @@ public class fileNode {
             System.out.println(i + "  "+ sizeThisTime+" "+ len);
             e.printStackTrace();
         }
-        curByteBuffer =ByteBuffer.wrap(byte4message,0,i+(int)sizeThisTime);
+        curByteBuffer = ByteBuffer.wrap(byte4message,0,i+(int)sizeThisTime);
         curPostion += sizeThisTime;
         return true;
     }
@@ -97,17 +101,24 @@ public class fileNode {
             }
         }
         len = curByteBuffer.getInt();
-        while (curByteBuffer.remaining() <= len) {
+        while (curByteBuffer.remaining() < len) {
             getLargerByteBuffer();
         }
         body = new byte[len];
-        curByteBuffer.get(body);
+        //System.out.println(curByteBuffer.limit());
         message = new OutputMesssage(body);
+        //System.out.println(new String(body));
         while (true){
             if (curByteBuffer.remaining()<2) {
                 getLargerByteBuffer();
             }
-            tmp = curByteBuffer.getChar();
+            try{
+                tmp = curByteBuffer.getChar();
+            }catch (Exception e){
+                System.out.println(len);
+                e.printStackTrace();
+            }
+
             if (tmp == ' ') break;
                 switch (tmp){
                     case '1':
