@@ -106,9 +106,8 @@ public class fileNode {
         }
         body = new byte[len];
         curByteBuffer.get(body);
-        //System.out.println(curByteBuffer.limit());
         message = new OutputMesssage(body);
-        //System.out.println(new String(body));
+
         while (true){
             if (curByteBuffer.remaining()<2) {
                 getLargerByteBuffer();
@@ -120,7 +119,7 @@ public class fileNode {
                 e.printStackTrace();
             }
 
-            if (tmp == ' ') break;
+            if (tmp == ' ') {break;}
                 switch (tmp){
                     case '1':
                         if (curByteBuffer.remaining()<8) {
@@ -191,7 +190,7 @@ public class fileNode {
                 getLargerByteBuffer();
             }
             tmp = curByteBuffer.getChar();
-            if (tmp == ' ') break;
+            if (tmp == ' ') {break;}
             switch (tmp){
                 case '1':
                     if (curByteBuffer.remaining()<8) {
