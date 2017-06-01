@@ -17,7 +17,7 @@ public class fileNode {
     byte[] body;char tmp;
     int strlen;byte[] tmpkey,tmpvalue;String key,valuestr;
     int headerInt;long headerLong;double headerDouble;
-    private int pageSize = 1024*16;//pagesize太小反而会OOM
+    private int pageSize = 1024*1024;//pagesize太小反而会OOM
     ByteBuffer curByteBuffer = null;
     long fileSize;
     long curPostion = 0;
@@ -25,7 +25,7 @@ public class fileNode {
     private static int consumerIndex = 0;
     FileChannel fc;
     MappedByteBuffer mbb;
-    byte[] byte4message = new byte[1024*512];//为了应对大的message提前开好512K的缓存
+    byte[] byte4message = new byte[1024*1024+100*1024];//为了应对大的message提前开好512K的缓存
     public fileNode(String fileName){
         try {
             fc = new RandomAccessFile (fileName, "r").getChannel();
@@ -46,7 +46,7 @@ public class fileNode {
             curPostion += pageSize;
             mbb.get(byte4message,0,pageSize);
             curByteBuffer = ByteBuffer.wrap(byte4message,0,pageSize);
-            System.out.println("first time we are at position " + curPostion);
+            //System.out.println("first time we are at position " + curPostion);
         } catch (Exception e) {
             e.printStackTrace();
         }
