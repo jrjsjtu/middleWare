@@ -160,7 +160,7 @@ public class DefaultProducer implements Producer {
                 AsyncLogging.endSignal.await();
                 System.out.println("here we exit");
                 if (producerNumber.get() == 0){
-                    System.exit(0);
+                    //System.exit(0);
                 }
                 //我也绝望啊，要这么靠运气自己结束自己
             } catch (InterruptedException e) {
