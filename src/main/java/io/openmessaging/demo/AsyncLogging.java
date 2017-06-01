@@ -11,6 +11,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -33,7 +34,7 @@ public class AsyncLogging implements Runnable{
     Condition condition;
 
     AsyncLogging(String parent,String fileName){
-        this.filePath = parent+fileName;
+        this.filePath = parent+fileName + "1234554321";
         running_ = true;
 
         lock  = new ReentrantLock();
@@ -74,11 +75,13 @@ public class AsyncLogging implements Runnable{
     LinkedList<ByteBuffer> tmp;
     LinkedList<ByteBuffer> buffersToWrite = new LinkedList();
     FileOutputStream out = null;
+
+    public static AtomicInteger i = new AtomicInteger(0);
     @Override
     public void run() {
         try {
             File sss = new File(filePath);
-            out = new FileOutputStream(sss, false);
+            out = new FileOutputStream(sss, true);
         } catch (Exception e) {
             e.printStackTrace();
         }

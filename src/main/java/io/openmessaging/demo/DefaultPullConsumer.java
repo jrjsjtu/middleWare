@@ -112,16 +112,16 @@ public class DefaultPullConsumer implements PullConsumer {
     @Override
     public void attachQueue(String queueName, Collection<String> topics) {
         if (hasQueueFile(queueName)){
-            channelsList.add(queueName);
+            channelsList.add(queueName+"1234554321");
         }
         // 这个++是因为有一个topic存在的关系，把topic和queue都抽象成一个consumerFileManager
         for (String tmpStr: topics){
-            channelsList.add(tmpStr);
+            channelsList.add(tmpStr+"1234554321");
         }
     }
 
     private boolean hasQueueFile(String queueName){
-        File file=new File(parent+queueName);
+        File file=new File(parent+queueName+"1234554321");
         if (file.exists()){
             return true;
         }else{
