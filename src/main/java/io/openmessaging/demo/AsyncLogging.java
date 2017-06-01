@@ -5,7 +5,6 @@ import io.openmessaging.tester.Constants;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -74,13 +73,19 @@ public class AsyncLogging implements Runnable{
     ByteBuffer tmpBuffer;
     LinkedList<ByteBuffer> tmp;
     LinkedList<ByteBuffer> buffersToWrite = new LinkedList();
-    RandomAccessFile out = null;
+    FileOutputStream out = null;
     @Override
     public void run() {
         try {
             File sss = new File(filePath);
-            out = new RandomAccessFile(sss, "rw");
-            out.seek(0);
+            if (sss.exists()){
+                System.out.println("file already exists");
+                sss.delete();
+            }else{
+                System.out.println("file not exist");
+            }
+            out = new FileOutputStream(sss, true);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -107,8 +112,7 @@ public class AsyncLogging implements Runnable{
             writeFile();
         }
         try {
-            out.write(int2byte(Integer.MAX_VALUE));
-            //magicNUmber
+            out.flush();
             out.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -132,6 +136,7 @@ public class AsyncLogging implements Runnable{
                 tmpBuffer = buffersToWrite.get(i);
                 out.write(tmpBuffer.array(),0,tmpBuffer.position());
             }
+            out.flush();
         } catch (IOException e) {
             e.printStackTrace();
         }
