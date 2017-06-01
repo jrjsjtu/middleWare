@@ -32,6 +32,7 @@ public class fileNode {
             if (fileSize<= pageSize){
                 pageSize = (int)fileSize;
             }
+            //System.out.println(fileSize);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -77,7 +78,7 @@ public class fileNode {
         try{
             raf.read(byte4message,i,(int)sizeThisTime);
         }catch(Exception e){
-            System.out.println(i + "  "+ sizeThisTime+" "+ len);
+            System.out.println(i + "  "+ sizeThisTime+" "+ len + " " +fileSize);
             e.printStackTrace();
         }
         curByteBuffer = ByteBuffer.wrap(byte4message,0,i+(int)sizeThisTime);
@@ -85,6 +86,10 @@ public class fileNode {
         return true;
     }
     private BytesMessage getMessageList(){
+        //程序结构的原因，如果要没读完，还会过来读，但是这边的FD已经close了。
+        if (len == Integer.MAX_VALUE){
+            return null;
+        }
         OutputMesssage message = null;
         if(curByteBuffer.remaining()<4) {
             if (getLargerByteBuffer()==false){
@@ -92,6 +97,9 @@ public class fileNode {
             }
         }
         len = curByteBuffer.getInt();
+        if (len == Integer.MAX_VALUE){
+            return null;
+        }
         while (curByteBuffer.remaining() < len) {
             getLargerByteBuffer();
         }
