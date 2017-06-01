@@ -22,6 +22,7 @@ public class fileNode {
     long fileSize;
     long curPostion = 0;
 
+    private static int consumerIndex = 0;
     FileChannel fc;
     MappedByteBuffer mbb;
     byte[] byte4message = new byte[1024*512];//为了应对大的message提前开好512K的缓存
@@ -33,6 +34,7 @@ public class fileNode {
             if (fileSize<= pageSize){
                 pageSize = (int)fileSize;
             }
+            System.out.println("fileSize is " + fileSize);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -46,6 +48,7 @@ public class fileNode {
             curPostion += pageSize;
             mbb.get(byte4message,0,pageSize);
             curByteBuffer = ByteBuffer.wrap(byte4message,0,pageSize);
+            System.out.println("first time we are at position " + curPostion);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -94,6 +97,7 @@ public class fileNode {
         return true;
     }
     private BytesMessage getMessageList(){
+        System.out.println("we are consuming " + ++consumerIndex + " th message");
         OutputMesssage message = null;
         if(curByteBuffer.remaining()<4) {
             if (getLargerByteBuffer()==false){
@@ -102,6 +106,8 @@ public class fileNode {
         }
         len = curByteBuffer.getInt();
         while (curByteBuffer.remaining() < len) {
+            System.out.println("curByteBuffer now remains " + curByteBuffer);
+            System.out.println("we need ? size to contain the body" + len);
             getLargerByteBuffer();
         }
         body = new byte[len];

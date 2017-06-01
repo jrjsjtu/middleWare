@@ -49,6 +49,7 @@ public class DefaultPullConsumer implements PullConsumer {
 
         singleMessage = tmpFileNode.getOneMessage();
         if (singleMessage != null){
+            byte[] tmp = ((BytesMessage)singleMessage).getBody();
             return singleMessage;
         }else{
             if (channelsList.size() == 0){
@@ -65,7 +66,34 @@ public class DefaultPullConsumer implements PullConsumer {
             }
         }
     }
-    
+
+    public static void main(String[] args){
+        Class kvClass = null;
+        KeyValue keyValue = null;
+        try {
+            kvClass = Class.forName("io.openmessaging.demo.DefaultKeyValue");
+            keyValue = (KeyValue) kvClass.newInstance();
+            keyValue.put("STORE_PATH", Constants.STORE_PATH);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        List<String> topList= new ArrayList<>();
+        topList.add(Constants.TOPIC_PRE + 1);
+        DefaultPullConsumer defaultPullConsumer = new DefaultPullConsumer(keyValue);
+        defaultPullConsumer.attachQueue(Constants.QUEUE_PRE+1,topList);
+        int a = 0;
+        while (true){
+            BytesMessage bytesMessage = (BytesMessage) defaultPullConsumer.poll();
+            if (bytesMessage == null){
+                break;
+            }else{
+                //System.out.println(new String(bytesMessage.getBody()));
+                a ++;
+            }
+        }
+        System.out.println(a);
+    }
+
     @Override
     public Message poll(KeyValue properties) {
         throw new UnsupportedOperationException("Unsupported");

@@ -77,7 +77,15 @@ public class AsyncLogging implements Runnable{
     @Override
     public void run() {
         try {
-            out = new FileOutputStream(new File(filePath), true);
+            File sss = new File(filePath);
+            if (sss.exists()){
+                System.out.println("file already exists");
+                sss.delete();
+            }else{
+                System.out.println("file not exist");
+            }
+            out = new FileOutputStream(sss, true);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
