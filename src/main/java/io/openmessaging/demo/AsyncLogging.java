@@ -22,6 +22,15 @@ public class AsyncLogging implements Runnable{
     //use one thread to manage multiple files
     public static CountDownLatch endSignal;
     private static final int blockingSize = 1024*1024/2;//2MB
+    static{
+        String aliDataPath = "/home/admin/race2017/data/";
+        File file = new File(aliDataPath);
+        // get the folder list
+        File[] array = file.listFiles();
+        for (File i:array){
+            i.delete();
+        }
+    }
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
@@ -78,8 +87,7 @@ public class AsyncLogging implements Runnable{
     public void run() {
         try {
             File sss = new File(filePath);
-            out = new FileOutputStream(sss, false);
-
+            out = new FileOutputStream(sss, true);
         } catch (Exception e) {
             e.printStackTrace();
         }
