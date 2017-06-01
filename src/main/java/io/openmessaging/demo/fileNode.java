@@ -22,14 +22,13 @@ public class fileNode {
     long fileSize;
     long curPostion = 0;
 
-    private static int consumerIndex = 0;
-    FileChannel fc;
-    MappedByteBuffer mbb;
-    byte[] byte4message = new byte[1024*1024+100*1024];//为了应对大的message提前开好512K的缓存
+    RandomAccessFile raf = null;
+
+    byte[] byte4message = new byte[4*1024*1024];//为了应对大的message提前开好512K的缓存
     public fileNode(String fileName){
         try {
-            fc = new RandomAccessFile (fileName, "r").getChannel();
-            fileSize = fc.size();
+            raf = new RandomAccessFile (fileName, "r");
+            fileSize = raf.length();
             if (fileSize<= pageSize){
                 pageSize = (int)fileSize;
             }
@@ -41,10 +40,9 @@ public class fileNode {
 
     private void getByteBuffer(){
         try {
-            mbb = fc.map(FileChannel.MapMode.READ_ONLY,curPostion,pageSize);
+            raf.read(byte4message,0,pageSize);
             //raf.read(byte4int);
             curPostion += pageSize;
-            mbb.get(byte4message,0,pageSize);
             curByteBuffer = ByteBuffer.wrap(byte4message,0,pageSize);
             //System.out.println("first time we are at position " + curPostion);
         } catch (Exception e) {
@@ -66,14 +64,6 @@ public class fileNode {
         }else{
             sizeThisTime = pageSize;
         }
-        try {
-            mbb = fc.map(FileChannel.MapMode.READ_ONLY,curPostion,sizeThisTime);
-        } catch (IOException e) {
-            System.out.println(curPostion);
-            System.out.println(pageSize);
-            System.out.println(fileSize);
-            e.printStackTrace();
-        }
         int i=0;
         if (curByteBuffer.position() == 0){
             i = curByteBuffer.limit();
@@ -85,7 +75,7 @@ public class fileNode {
             }
         }
         try{
-            mbb.get(byte4message,i,(int)sizeThisTime);
+            raf.read(byte4message,i,(int)sizeThisTime);
         }catch(Exception e){
             System.out.println(i + "  "+ sizeThisTime+" "+ len);
             e.printStackTrace();
@@ -261,7 +251,7 @@ public class fileNode {
     }
     public void closeFileFD(){
         try {
-            fc.close();
+            raf.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
