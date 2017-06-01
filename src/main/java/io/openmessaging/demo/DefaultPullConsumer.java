@@ -10,7 +10,7 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class DefaultPullConsumer implements PullConsumer {
-    private static final int step = 20;
+    private static final int step = 30;
     private static Semaphore threadNumberControl;
     static{
         threadNumberControl = new Semaphore(step);

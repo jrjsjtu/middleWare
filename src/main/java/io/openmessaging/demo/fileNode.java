@@ -29,12 +29,10 @@ public class fileNode {
     public fileNode(String fileName){
         try {
             fc = new RandomAccessFile (fileName, "r").getChannel();
-            //raf = new FileInputStream(fileName);
             fileSize = fc.size();
             if (fileSize<= pageSize){
                 pageSize = (int)fileSize;
             }
-            System.out.println("fileSize is " + fileSize);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -97,7 +95,6 @@ public class fileNode {
         return true;
     }
     private BytesMessage getMessageList(){
-        System.out.println("we are consuming " + ++consumerIndex + " th message");
         OutputMesssage message = null;
         if(curByteBuffer.remaining()<4) {
             if (getLargerByteBuffer()==false){
@@ -106,8 +103,6 @@ public class fileNode {
         }
         len = curByteBuffer.getInt();
         while (curByteBuffer.remaining() < len) {
-            System.out.println("curByteBuffer now remains " + curByteBuffer);
-            System.out.println("we need ? size to contain the body" + len);
             getLargerByteBuffer();
         }
         body = new byte[len];
