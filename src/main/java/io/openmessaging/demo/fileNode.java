@@ -32,7 +32,6 @@ public class fileNode {
             if (fileSize<= pageSize){
                 pageSize = (int)fileSize;
             }
-            //System.out.println(fileSize);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -78,7 +77,7 @@ public class fileNode {
         try{
             raf.read(byte4message,i,(int)sizeThisTime);
         }catch(Exception e){
-            System.out.println(i + "  "+ sizeThisTime+" "+ len + " " +fileSize);
+            System.out.println(i + "  "+ sizeThisTime+" "+ len);
             e.printStackTrace();
         }
         curByteBuffer = ByteBuffer.wrap(byte4message,0,i+(int)sizeThisTime);
@@ -86,10 +85,6 @@ public class fileNode {
         return true;
     }
     private BytesMessage getMessageList(){
-        //程序结构的原因，如果要没读完，还会过来读，但是这边的FD已经close了。
-        if (len == Integer.MAX_VALUE){
-            return null;
-        }
         OutputMesssage message = null;
         if(curByteBuffer.remaining()<4) {
             if (getLargerByteBuffer()==false){
@@ -97,9 +92,6 @@ public class fileNode {
             }
         }
         len = curByteBuffer.getInt();
-        if (len == Integer.MAX_VALUE){
-            return null;
-        }
         while (curByteBuffer.remaining() < len) {
             getLargerByteBuffer();
         }
@@ -119,70 +111,70 @@ public class fileNode {
             }
 
             if (tmp == ' ') {break;}
-                switch (tmp){
-                    case '1':
-                        if (curByteBuffer.remaining()<8) {
-                           getLargerByteBuffer();
-                        }
-                        headerInt = curByteBuffer.getInt();
-                        strlen = curByteBuffer.getInt();
-                        while (curByteBuffer.remaining() < strlen) {
-                            getLargerByteBuffer();
-                        }
-                        tmpkey = new byte[strlen];
-                        curByteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putHeaders(key,headerInt);break;
-                    case '2':
-                        if (curByteBuffer.remaining()<8+4) {
-                            getLargerByteBuffer();
-                        }
-                        headerLong = curByteBuffer.getLong();
-                        strlen = curByteBuffer.getInt();
-                        while (curByteBuffer.remaining() < strlen) {
-                            getLargerByteBuffer();
-                        }
-                        tmpkey = new byte[strlen];
-                        curByteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putHeaders(key,headerLong);break;
-                    case '3':
-                        if (curByteBuffer.remaining()<8+4) {
-                            getLargerByteBuffer();
-                        }
-                        headerDouble = curByteBuffer.getDouble();
-                        strlen = curByteBuffer.getInt();
-                        while (curByteBuffer.remaining() < strlen) {
-                            getLargerByteBuffer();
-                        }
-                        tmpkey = new byte[strlen];
-                        curByteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putHeaders(key,headerDouble);break;
-                    case '4':
-                        if (curByteBuffer.remaining()<4) {
-                            getLargerByteBuffer();
-                        }
-                        strlen = curByteBuffer.getInt();
-                        while (curByteBuffer.remaining() < strlen) {
-                            getLargerByteBuffer();
-                        }
-                        tmpvalue = new byte[strlen];
-                        curByteBuffer.get(tmpvalue);
-                        valuestr = new String(tmpvalue);
-                        if (curByteBuffer.remaining()<4) {
-                            getLargerByteBuffer();
-                        }
-                        strlen = curByteBuffer.getInt();
-                        tmpkey = new byte[strlen];
-                        while (curByteBuffer.remaining() < strlen) {
-                            getLargerByteBuffer();
-                        }
-                        curByteBuffer.get(tmpkey);
-                        key = new String(tmpkey);
-                        message.putHeaders(key,valuestr);break;
-                }
+            switch (tmp){
+                case '1':
+                    if (curByteBuffer.remaining()<8) {
+                        getLargerByteBuffer();
+                    }
+                    headerInt = curByteBuffer.getInt();
+                    strlen = curByteBuffer.getInt();
+                    while (curByteBuffer.remaining() < strlen) {
+                        getLargerByteBuffer();
+                    }
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
+                    message.putHeaders(key,headerInt);break;
+                case '2':
+                    if (curByteBuffer.remaining()<8+4) {
+                        getLargerByteBuffer();
+                    }
+                    headerLong = curByteBuffer.getLong();
+                    strlen = curByteBuffer.getInt();
+                    while (curByteBuffer.remaining() < strlen) {
+                        getLargerByteBuffer();
+                    }
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
+                    message.putHeaders(key,headerLong);break;
+                case '3':
+                    if (curByteBuffer.remaining()<8+4) {
+                        getLargerByteBuffer();
+                    }
+                    headerDouble = curByteBuffer.getDouble();
+                    strlen = curByteBuffer.getInt();
+                    while (curByteBuffer.remaining() < strlen) {
+                        getLargerByteBuffer();
+                    }
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
+                    message.putHeaders(key,headerDouble);break;
+                case '4':
+                    if (curByteBuffer.remaining()<4) {
+                        getLargerByteBuffer();
+                    }
+                    strlen = curByteBuffer.getInt();
+                    while (curByteBuffer.remaining() < strlen) {
+                        getLargerByteBuffer();
+                    }
+                    tmpvalue = new byte[strlen];
+                    curByteBuffer.get(tmpvalue);
+                    valuestr = new String(tmpvalue);
+                    if (curByteBuffer.remaining()<4) {
+                        getLargerByteBuffer();
+                    }
+                    strlen = curByteBuffer.getInt();
+                    tmpkey = new byte[strlen];
+                    while (curByteBuffer.remaining() < strlen) {
+                        getLargerByteBuffer();
+                    }
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
+                    message.putHeaders(key,valuestr);break;
             }
+        }
 
         while (true){
             if (curByteBuffer.remaining()<2) {
