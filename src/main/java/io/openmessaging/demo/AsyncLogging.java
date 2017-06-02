@@ -23,7 +23,7 @@ public class AsyncLogging implements Runnable{
     //use one thread to manage multiple files
     public static CountDownLatch endSignal;
     private static final int blockingSize = 1024*1024;//2MB
-    public static final int fileMagicNumber = 17778;
+    public static final int fileMagicNumber = 27149;
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
