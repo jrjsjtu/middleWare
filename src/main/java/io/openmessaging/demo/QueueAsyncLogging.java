@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class QueueAsyncLogging  extends AbstractLogging {
     //use one thread to manage multiple files
-    private static final int blockingSize = 1024*512;//Leave 512KB for QueueLogging
+    private static final int blockingSize = 1024*256;//Leave 512KB for QueueLogging
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
