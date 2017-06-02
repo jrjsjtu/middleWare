@@ -73,7 +73,6 @@ public class AsyncLogging extends AbstractLogging{
     LinkedList<ByteBuffer> buffersToWrite = new LinkedList();
     FileOutputStream out = null;
 
-    public static AtomicInteger i = new AtomicInteger(0);
     @Override
     public void run() {
         try {
