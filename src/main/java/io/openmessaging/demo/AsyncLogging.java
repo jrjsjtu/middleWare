@@ -1,14 +1,16 @@
 package io.openmessaging.demo;
 
-import io.openmessaging.demo.JRJSer.AbstractLogging;
-import io.openmessaging.demo.JRJSer.ILogging;
+import io.openmessaging.tester.Constants;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.LinkedList;
+import java.util.Queue;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
@@ -17,9 +19,11 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Created by jrj on 17-5-22.
  */
-public class AsyncLogging extends AbstractLogging{
+public class AsyncLogging implements Runnable{
     //use one thread to manage multiple files
-    private static final int blockingSize = 1024*(1024);//2MB
+    public static CountDownLatch endSignal;
+    private final int blockingSize;//2MB
+    public static final int fileMagicNumber = 9527;
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
@@ -30,8 +34,10 @@ public class AsyncLogging extends AbstractLogging{
     Lock lock;
     Condition condition;
 
-    AsyncLogging(String parent,String fileName){
-        this.filePath = parent+fileName + AbstractLogging.fileMagicNumber;
+    AsyncLogging(String parent,String fileName,boolean isTopic){
+        if (isTopic){blockingSize = 1024*1024;}
+        else{blockingSize = 1024*512;}
+        this.filePath = parent+fileName + AsyncLogging.fileMagicNumber;
         running_ = true;
 
         lock  = new ReentrantLock();
@@ -66,15 +72,18 @@ public class AsyncLogging extends AbstractLogging{
         lock.unlock();
     }
     //variables for thread
-    ByteBuffer newBuffer1 = ByteBuffer.allocate(blockingSize);
-    ByteBuffer newBuffer2 = ByteBuffer.allocate(blockingSize);
+    ByteBuffer newBuffer1;
+    ByteBuffer newBuffer2;
     ByteBuffer tmpBuffer;
     LinkedList<ByteBuffer> tmp;
     LinkedList<ByteBuffer> buffersToWrite = new LinkedList();
     FileOutputStream out = null;
 
+    public static AtomicInteger i = new AtomicInteger(0);
     @Override
     public void run() {
+        newBuffer1 = ByteBuffer.allocate(blockingSize);
+        newBuffer2 = ByteBuffer.allocate(blockingSize);
         try {
             File sss = new File(filePath);
             out = new FileOutputStream(sss, true);

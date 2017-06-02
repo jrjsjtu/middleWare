@@ -24,7 +24,7 @@ public class fileNode {
 
     RandomAccessFile raf = null;
 
-    byte[] byte4message = new byte[4*1024*1024];//为了应对大的message提前开好512K的缓存
+    byte[] byte4message = new byte[2*1024*1024];//为了应对大的message提前开好512K的缓存
     public fileNode(String fileName){
         try {
             raf = new RandomAccessFile (fileName, "r");

@@ -1,8 +1,6 @@
 package io.openmessaging.demo;
 
 import io.openmessaging.*;
-import io.openmessaging.demo.JRJSer.AbstractLogging;
-import io.openmessaging.demo.JRJSer.ILogging;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -17,7 +15,7 @@ public class DefaultProducer implements Producer {
         //获得进程开始时间，防止有的producer线程过早结束，而使得程序过早结束
         startTime = System.currentTimeMillis();
     }
-    public static HashMap<String,AbstractLogging> fileMap = new HashMap();
+    public static HashMap<String,AsyncLogging> fileMap = new HashMap();
 
     private KeyValue properties;
     String parent;
@@ -56,7 +54,7 @@ public class DefaultProducer implements Producer {
     public KeyValue properties() {
         return properties;
     }
-    boolean messageType;
+
     @Override
     public void send(Message message) {
         if(isStart){
@@ -70,12 +68,10 @@ public class DefaultProducer implements Producer {
             String fileName = null;
             if (topic != null) {
                 fileName = topic;
-                messageType = true;
             } else {
                 fileName = queue;
-                messageType = false;
             }
-            AbstractLogging fileManager = getFileManager(fileName,messageType);
+            AsyncLogging fileManager = getFileManager(fileName,topic);
             byte[] tmp = ((DefaultBytesMessage)message).getByteArray();
             fileManager.append(tmp,tmp.length);
         }else{
@@ -83,14 +79,17 @@ public class DefaultProducer implements Producer {
         }
     }
 
-    private AbstractLogging getFileManager(String fileName,boolean isTopic){
-        AbstractLogging fileLogger = fileMap.get(fileName);
+    private AsyncLogging getFileManager(String fileName,String topic){
+        AsyncLogging fileLogger = fileMap.get(fileName);
         if (fileLogger == null){
             synchronized (fileMap){
                 fileLogger = fileMap.get(fileName);
                 if (fileLogger ==null){
-                    if (isTopic){fileLogger = new AsyncLogging(parent,fileName);}
-                    else{fileLogger = new QueueAsyncLogging(parent,fileName);}
+                    if (topic != null){
+                        fileLogger = new AsyncLogging(parent,fileName,true);
+                    }else{
+                        fileLogger = new AsyncLogging(parent,fileName,false);
+                    }
                     fileMap.put(fileName,fileLogger);//尽管synchronize的代价很大，但是只有在第一次创建topic或者queue的时候发生。仍然可以接受
                     new Thread(fileLogger).start();
                 }
@@ -146,11 +145,11 @@ public class DefaultProducer implements Producer {
                 if (producerNumber.get()!=0){
                     return;
                 }
-                AbstractLogging.endSignal = new CountDownLatch(fileMap.size());
+                AsyncLogging.endSignal = new CountDownLatch(fileMap.size());
                 Iterator iter = fileMap.entrySet().iterator();
                 while (iter.hasNext()){
                     Map.Entry entry = (Map.Entry) iter.next();
-                    AbstractLogging val = (AbstractLogging) entry.getValue();
+                    AsyncLogging val = (AsyncLogging) entry.getValue();
                     val.signalFlush();
                 }
                 //fileMap = new HashMap();
