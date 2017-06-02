@@ -7,7 +7,7 @@ import java.util.concurrent.CountDownLatch;
  */
 public class AbstractLogging implements ILogging,Runnable {
     public static CountDownLatch endSignal;
-    public static final int fileMagicNumber = 17778;
+    public static final int fileMagicNumber = 17770;
     @Override
     public void append(byte[] byteArray, int len) {
 
