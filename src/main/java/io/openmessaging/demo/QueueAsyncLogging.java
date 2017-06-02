@@ -15,12 +15,11 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Created by jrj on 17-5-22.
+ * Created by jrj on 17-6-2.
  */
-public class AsyncLogging extends AbstractLogging{
+public class QueueAsyncLogging  extends AbstractLogging {
     //use one thread to manage multiple files
-    private static final int blockingSize = 1024*(1024+512);//2MB
-    public static final int fileMagicNumber = 17778;
+    private static final int blockingSize = 1024*512;//Leave 512KB for QueueLogging
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
@@ -31,8 +30,8 @@ public class AsyncLogging extends AbstractLogging{
     Lock lock;
     Condition condition;
 
-    AsyncLogging(String parent,String fileName){
-        this.filePath = parent+fileName + AsyncLogging.fileMagicNumber;
+    QueueAsyncLogging(String parent,String fileName){
+        this.filePath = parent+fileName + AbstractLogging.fileMagicNumber;
         running_ = true;
 
         lock  = new ReentrantLock();

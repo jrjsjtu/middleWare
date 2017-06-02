@@ -1,6 +1,7 @@
 package io.openmessaging.demo;
 
 import io.openmessaging.*;
+import io.openmessaging.demo.JRJSer.AbstractLogging;
 import io.openmessaging.tester.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -112,16 +113,16 @@ public class DefaultPullConsumer implements PullConsumer {
     @Override
     public void attachQueue(String queueName, Collection<String> topics) {
         if (hasQueueFile(queueName)){
-            channelsList.add(queueName+AsyncLogging.fileMagicNumber);
+            channelsList.add(queueName+ AbstractLogging.fileMagicNumber);
         }
         // 这个++是因为有一个topic存在的关系，把topic和queue都抽象成一个consumerFileManager
         for (String tmpStr: topics){
-            channelsList.add(tmpStr+AsyncLogging.fileMagicNumber);
+            channelsList.add(tmpStr+AbstractLogging.fileMagicNumber);
         }
     }
 
     private boolean hasQueueFile(String queueName){
-        File file=new File(parent+queueName+AsyncLogging.fileMagicNumber);
+        File file=new File(parent+queueName+AbstractLogging.fileMagicNumber);
         if (file.exists()){
             return true;
         }else{
