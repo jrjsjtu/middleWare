@@ -23,7 +23,8 @@ public class DefaultProducer implements Producer {
     private static AtomicInteger producerNumber = new AtomicInteger(0);
     public DefaultProducer(KeyValue properties) {
         this.properties = properties;
-        producerNumber.getAndIncrement();
+        System.out.println("start producer index: " + producerNumber.getAndIncrement());
+        //producerNumber.getAndIncrement();
         parent = properties.getString("STORE_PATH");
         //messageStore = MessageStore.getInstance(properties.getString("STORE_PATH"));
     }
@@ -133,14 +134,8 @@ public class DefaultProducer implements Producer {
     public void flush() {
         isStart = false;
         int  aaa = producerNumber.decrementAndGet();
-        //System.out.println(aaa);
+        System.out.println("stop and flush Producer" + aaa);
         if (aaa == 0){
-            /*
-            if ((System.currentTimeMillis() - startTime)<110000l){
-                //return;
-                //我们的程序起码要110S结束，比100S还要早结束什么不存在的。
-            }
-            */
             synchronized (fileMap){
                 //保险起见，还是synchronize一下。
                 if (producerNumber.get()!=0){
@@ -159,10 +154,6 @@ public class DefaultProducer implements Producer {
                 //这里留一点时间给最后持久化，我观察到比赛机器上kill -9总是失败额。不知道阿里那边怎么回事。
                 AsyncLogging.endSignal.await();
                 System.out.println("here we exit");
-                if (producerNumber.get() == 0){
-                    //System.exit(0);
-                }
-                //我也绝望啊，要这么靠运气自己结束自己
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
