@@ -34,7 +34,7 @@ public class AsyncLogging implements Runnable{
     Condition condition;
 
     AsyncLogging(String parent,String fileName){
-        this.filePath = parent+fileName + "1234554321";
+        this.filePath = parent+fileName + "123455432";
         running_ = true;
 
         lock  = new ReentrantLock();
