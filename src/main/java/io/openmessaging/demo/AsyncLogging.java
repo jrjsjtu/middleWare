@@ -22,8 +22,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class AsyncLogging implements Runnable{
     //use one thread to manage multiple files
     public static CountDownLatch endSignal;
-    private final int blockingSize;//2MB
-    public static final int fileMagicNumber = 9527;
+    private static final int blockingSize = 1024*1024;//2MB
+    public static final int fileMagicNumber = 17778;
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
@@ -34,9 +34,7 @@ public class AsyncLogging implements Runnable{
     Lock lock;
     Condition condition;
 
-    AsyncLogging(String parent,String fileName,boolean isTopic){
-        if (isTopic){blockingSize = 1024*1024;}
-        else{blockingSize = 1024*512;}
+    AsyncLogging(String parent,String fileName){
         this.filePath = parent+fileName + AsyncLogging.fileMagicNumber;
         running_ = true;
 
@@ -72,8 +70,8 @@ public class AsyncLogging implements Runnable{
         lock.unlock();
     }
     //variables for thread
-    ByteBuffer newBuffer1;
-    ByteBuffer newBuffer2;
+    ByteBuffer newBuffer1 = ByteBuffer.allocate(blockingSize);
+    ByteBuffer newBuffer2 = ByteBuffer.allocate(blockingSize);
     ByteBuffer tmpBuffer;
     LinkedList<ByteBuffer> tmp;
     LinkedList<ByteBuffer> buffersToWrite = new LinkedList();
@@ -82,8 +80,6 @@ public class AsyncLogging implements Runnable{
     public static AtomicInteger i = new AtomicInteger(0);
     @Override
     public void run() {
-        newBuffer1 = ByteBuffer.allocate(blockingSize);
-        newBuffer2 = ByteBuffer.allocate(blockingSize);
         try {
             File sss = new File(filePath);
             out = new FileOutputStream(sss, true);

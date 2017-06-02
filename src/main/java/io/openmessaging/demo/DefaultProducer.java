@@ -71,7 +71,7 @@ public class DefaultProducer implements Producer {
             } else {
                 fileName = queue;
             }
-            AsyncLogging fileManager = getFileManager(fileName,topic);
+            AsyncLogging fileManager = getFileManager(fileName);
             byte[] tmp = ((DefaultBytesMessage)message).getByteArray();
             fileManager.append(tmp,tmp.length);
         }else{
@@ -79,17 +79,13 @@ public class DefaultProducer implements Producer {
         }
     }
 
-    private AsyncLogging getFileManager(String fileName,String topic){
+    private AsyncLogging getFileManager(String fileName){
         AsyncLogging fileLogger = fileMap.get(fileName);
         if (fileLogger == null){
             synchronized (fileMap){
                 fileLogger = fileMap.get(fileName);
                 if (fileLogger ==null){
-                    if (topic != null){
-                        fileLogger = new AsyncLogging(parent,fileName,true);
-                    }else{
-                        fileLogger = new AsyncLogging(parent,fileName,false);
-                    }
+                    fileLogger = new AsyncLogging(parent,fileName);
                     fileMap.put(fileName,fileLogger);//尽管synchronize的代价很大，但是只有在第一次创建topic或者queue的时候发生。仍然可以接受
                     new Thread(fileLogger).start();
                 }
