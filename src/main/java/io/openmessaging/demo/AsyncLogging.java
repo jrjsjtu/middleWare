@@ -23,6 +23,7 @@ public class AsyncLogging implements Runnable{
     //use one thread to manage multiple files
     public static CountDownLatch endSignal;
     private static final int blockingSize = 1024*1024;//2MB
+    public static final int fileMagicNumber = 17778;
     ByteBuffer currentBuffer;
     ByteBuffer nextBuffer;
     LinkedList<ByteBuffer> buffers_;
@@ -34,7 +35,7 @@ public class AsyncLogging implements Runnable{
     Condition condition;
 
     AsyncLogging(String parent,String fileName){
-        this.filePath = parent+fileName + "123455432";
+        this.filePath = parent+fileName + AsyncLogging.fileMagicNumber;
         running_ = true;
 
         lock  = new ReentrantLock();
@@ -91,8 +92,8 @@ public class AsyncLogging implements Runnable{
             if (buffers_.size() == 0){
                 try {
                     //反正最后强制flush也不用三秒刷新一次了。。
-                    condition.await(3000, TimeUnit.MILLISECONDS);
-                    //condition.await();
+                    //condition.await(3000, TimeUnit.MILLISECONDS);
+                    condition.await();
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
