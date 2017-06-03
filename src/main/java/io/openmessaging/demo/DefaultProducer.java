@@ -140,7 +140,6 @@ public class DefaultProducer implements Producer {
                 if (producerNumber.get()!=0){
                     return;
                 }
-                AsyncLogging.endSignal = new CountDownLatch(fileMap.size());
                 Iterator iter = fileMap.entrySet().iterator();
                 while (iter.hasNext()){
                     Map.Entry entry = (Map.Entry) iter.next();
