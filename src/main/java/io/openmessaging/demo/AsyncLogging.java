@@ -21,7 +21,6 @@ public class AsyncLogging{
     private static final int blockingSize = 1024*1024*1;//2MB
     public static final int fileMagicNumber = 1156217149;
     private static final int fileMapSize = 64*1024*1024;
-    FileOutputStream out = null;
 
     String filePath;
     Lock lock;
@@ -33,11 +32,14 @@ public class AsyncLogging{
 
     long curPosition;
     long filePosition;
+    FileOutputStream out;
     AsyncLogging(String parent,String fileName){
         this.filePath = parent+fileName + AsyncLogging.fileMagicNumber;
         try {
-            raf = new RandomAccessFile(this.filePath,"rw");
-            fc = raf.getChannel();
+            //raf = new RandomAccessFile(this.filePath,"rw");
+            //fc = raf.getChannel();
+            out = new FileOutputStream(new File(filePath), true);
+            fc = out.getChannel();
             //File sss = new File(filePath);
             //out = new FileOutputStream(sss, true);
             mbb = fc.map(FileChannel.MapMode.READ_WRITE,0,fileMapSize);
