@@ -18,9 +18,10 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 public class AsyncLogging{
     //use one thread to manage multiple files
-    private static final int blockingSize = 1024*1024*1;//2MB
+    private static final int blockingSize = 1024*1024*2;//2MB
     public static final int fileMagicNumber = 1156217149;
-    private static final int fileMapSize = 64*1024*1024;
+    private static final int fileMapSize =32*1024*1024;
+    FileOutputStream out = null;
 
     String filePath;
     Lock lock;
@@ -32,14 +33,11 @@ public class AsyncLogging{
 
     long curPosition;
     long filePosition;
-    FileOutputStream out;
     AsyncLogging(String parent,String fileName){
         this.filePath = parent+fileName + AsyncLogging.fileMagicNumber;
         try {
-            //raf = new RandomAccessFile(this.filePath,"rw");
-            //fc = raf.getChannel();
-            out = new FileOutputStream(new File(filePath), true);
-            fc = out.getChannel();
+            raf = new RandomAccessFile(this.filePath,"rw");
+            fc = raf.getChannel();
             //File sss = new File(filePath);
             //out = new FileOutputStream(sss, true);
             mbb = fc.map(FileChannel.MapMode.READ_WRITE,0,fileMapSize);
@@ -50,28 +48,47 @@ public class AsyncLogging{
         currentBuffer = ByteBuffer.allocate(blockingSize);
     }
 
-    public void append(byte[] byteArray,int len){
+    public void append(byte[] byteArray,int len) {
         lock.lock();
-        if (curPosition+len<fileMapSize){
-            curPosition+=len;
-            mbb.put(byteArray);
-        }else{
-            filePosition += curPosition;
-            curPosition = 0;
-            try {
-                mbb = fc.map(FileChannel.MapMode.READ_WRITE,filePosition,fileMapSize);
-            } catch (IOException e) {
-                e.printStackTrace();
+        if (currentBuffer.remaining() > len) {
+            currentBuffer.put(byteArray);
+        } else {
+            if (curPosition + currentBuffer.position() < fileMapSize) {
+                mbb.put(currentBuffer.array(), 0, currentBuffer.position());
+                filePosition += currentBuffer.position();
+                curPosition += currentBuffer.position();
+            } else {
+                try {
+                    mbb = fc.map(FileChannel.MapMode.READ_WRITE, filePosition, fileMapSize);
+                    mbb.put(currentBuffer.array(), 0, currentBuffer.position());
+                    filePosition += currentBuffer.position();
+                    curPosition = currentBuffer.position();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
-            mbb.put(byteArray);
+            currentBuffer.clear();
+            currentBuffer.put(byteArray);
         }
         lock.unlock();
     }
 
     public void signalFlush(){
         lock.lock();
-        filePosition += curPosition;
+        //filePosition += curPosition;
         try {
+            if (curPosition + currentBuffer.position() < fileMapSize) {
+                mbb.put(currentBuffer.array(), 0, currentBuffer.position());
+                filePosition += currentBuffer.position();
+            } else {
+                try {
+                    mbb = fc.map(FileChannel.MapMode.READ_WRITE, filePosition, fileMapSize);
+                    mbb.put(currentBuffer.array(), 0, currentBuffer.position());
+                    filePosition += currentBuffer.position();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
             raf.setLength(filePosition);
             fc.close();
             raf.close();

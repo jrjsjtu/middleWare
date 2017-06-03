@@ -17,10 +17,11 @@ public class DefaultPullConsumer implements PullConsumer {
     private KeyValue properties;
     private ArrayList<String> channelsList = new ArrayList<>();
     String parent;
-
+    private static int i=0;
     public DefaultPullConsumer(KeyValue properties) {
         this.properties = properties;
         parent = properties.getString("STORE_PATH");
+        System.out.println("here start consumer" + i++);
     }
 
     @Override
