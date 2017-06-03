@@ -87,7 +87,6 @@ public class DefaultProducer implements Producer {
                 if (fileLogger ==null){
                     fileLogger = new AsyncLogging(parent,fileName);
                     fileMap.put(fileName,fileLogger);//尽管synchronize的代价很大，但是只有在第一次创建topic或者queue的时候发生。仍然可以接受
-                    new Thread(fileLogger).start();
                 }
             }
         }
@@ -149,13 +148,6 @@ public class DefaultProducer implements Producer {
                     val.signalFlush();
                 }
                 //fileMap = new HashMap();
-            }
-            try {
-                //这里留一点时间给最后持久化，我观察到比赛机器上kill -9总是失败额。不知道阿里那边怎么回事。
-                AsyncLogging.endSignal.await();
-                System.out.println("here we exit");
-            } catch (InterruptedException e) {
-                e.printStackTrace();
             }
         }
     }
