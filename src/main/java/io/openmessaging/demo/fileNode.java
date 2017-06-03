@@ -1,32 +1,33 @@
 package io.openmessaging.demo;
 
 import io.openmessaging.BytesMessage;
-import io.openmessaging.Message;
+import io.openmessaging.MessageHeader;
 
-import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
-import java.nio.MappedByteBuffer;
-import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.zip.Inflater;
 
 /**
  * Created by jrj on 17-5-30.
  */
-public class fileNode {
+public class fileNode extends Thread{
     int len;
     byte[] body;char tmp;
     int strlen;byte[] tmpkey,tmpvalue;String key,valuestr;
     int headerInt;long headerLong;double headerDouble;
+
     ByteBuffer curByteBuffer = null;
     long fileSize;
     long curPostion = 0;
+
 
     RandomAccessFile raf = null;
     Inflater decompresser = new Inflater();
     byte[] byte4message = new byte[2*1024*1024];//为了应对大的message提前开好512K的缓存
     byte[] byte4zip = new byte[1024*1024];
     byte[] byte4int = new byte[4];
+
     public fileNode(String fileName){
         try {
             raf = new RandomAccessFile (fileName, "r");
@@ -58,13 +59,9 @@ public class fileNode {
         return true;
     }
 
-    public Message getOneMessage(){
-        return getMessageList();
-    }
-
     private BytesMessage getMessageList(){
         OutputMesssage message = null;
-        if(curByteBuffer.remaining() == 0) {
+        if(curByteBuffer.remaining()== 0) {
             if (getByteBuffer()==false){
                 return null;
             }
@@ -81,6 +78,7 @@ public class fileNode {
                 System.out.println(len);
                 e.printStackTrace();
             }
+
             if (tmp == ' ') {break;}
             switch (tmp){
                 case '1':
@@ -157,11 +155,39 @@ public class fileNode {
 
         return message;
     }
-    public void closeFileFD(){
-        try {
-            raf.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+
+    String topic;
+    public void run(){
+        ArrayList interestArray;
+        while (true){
+            BytesMessage message = getMessageList();
+            if (message == null){
+                break;
+            }
+            topic = message.headers().getString(MessageHeader.TOPIC);
+            if(topic == null){
+                topic = message.headers().getString(MessageHeader.QUEUE);
+            }
+            interestArray = DefaultPullConsumer.interestList.get(topic);
+            if (interestArray != null){
+                for (Object pullConsumer: interestArray){
+                    try {
+                        ((DefaultPullConsumer)pullConsumer).msgQueue.put(message);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }
+        if (DefaultPullConsumer.remainThread.decrementAndGet() == 0){
+            OutputMesssage endMessage = new OutputMesssage(new byte[1123]);
+            for (DefaultPullConsumer pullConsumer:DefaultPullConsumer.notifyList){
+                try {
+                    pullConsumer.msgQueue.put(endMessage);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 }
