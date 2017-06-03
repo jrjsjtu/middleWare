@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
 public class AsyncLogging{
     //use one thread to manage multiple files
     private static final int blockingSize = 1024*1024*2;//2MB
-    public static final int fileMagicNumber = 1156217149;
+    public static final int fileMagicNumber = 51205191;
     private static final int fileMapSize =32*1024*1024;
     FileOutputStream out = null;
 
