@@ -2,11 +2,6 @@ package io.openmessaging.demo;
 
 import io.openmessaging.*;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -15,26 +10,22 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 public class DefaultProducer implements Producer {
     private MessageFactory messageFactory = new DefaultMessageFactory();
-    public static final String magicNumber = "1232434";
+    static Long startTime;
+    static{
+        //获得进程开始时间，防止有的producer线程过早结束，而使得程序过早结束
+        startTime = System.currentTimeMillis();
+    }
+    public static HashMap<String,AsyncLogging> fileMap = new HashMap();
 
-    private static AtomicInteger producerNum= new AtomicInteger(0);
-    FileOutputStream out;
-    int producerIndex;
     private KeyValue properties;
     String parent;
+    boolean isStart = true;
+    private static AtomicInteger producerNumber = new AtomicInteger(0);
     public DefaultProducer(KeyValue properties) {
         this.properties = properties;
-        //System.out.println("start producer index: " + producerNumber.getAndIncrement());
+        System.out.println("start producer index: " + producerNumber.getAndIncrement());
         //producerNumber.getAndIncrement();
         parent = properties.getString("STORE_PATH");
-        //nameFileMap = new HashMap<>(210/3*4);
-        producerIndex = producerNum.getAndIncrement();
-        try {
-            out = new FileOutputStream(new File(parent+producerIndex+magicNumber),true);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
-        //loadFactor is 0.75
         //messageStore = MessageStore.getInstance(properties.getString("STORE_PATH"));
     }
 
@@ -63,26 +54,44 @@ public class DefaultProducer implements Producer {
     public KeyValue properties() {
         return properties;
     }
-    private static final int blockingSize = 1024*1024*4;
-    ByteBuffer byteBuffer = ByteBuffer.allocate(blockingSize);
-    byte[] tmp;
+
     @Override
     public void send(Message message) {
-        tmp = ((DefaultBytesMessage)message).getByteArray();
-        if (byteBuffer.remaining()>tmp.length){
-            byteBuffer.put(tmp);
-        }else{
-            try {
-                out.write(byteBuffer.array(),0,byteBuffer.position());
-                out.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
+        if(isStart){
+            if (message == null) throw new ClientOMSException("Message should not be null");
+            String topic = message.headers().getString(MessageHeader.TOPIC);
+            String queue = message.headers().getString(MessageHeader.QUEUE);
+            if ((topic == null && queue == null) || (topic != null && queue != null)) {
+                throw new ClientOMSException(String.format("Queue:%s Topic:%s should put one and only one", true, queue));
             }
-            byteBuffer.clear();
-            byteBuffer.put(tmp);
+
+            String fileName = null;
+            if (topic != null) {
+                fileName = topic;
+            } else {
+                fileName = queue;
+            }
+            AsyncLogging fileManager = getFileManager(fileName);
+            byte[] tmp = ((DefaultBytesMessage)message).getByteArray();
+            fileManager.append(tmp,tmp.length);
+        }else{
+            return;
         }
     }
 
+    private AsyncLogging getFileManager(String fileName){
+        AsyncLogging fileLogger = fileMap.get(fileName);
+        if (fileLogger == null){
+            synchronized (fileMap){
+                fileLogger = fileMap.get(fileName);
+                if (fileLogger ==null){
+                    fileLogger = new AsyncLogging(parent,fileName);
+                    fileMap.put(fileName,fileLogger);//尽管synchronize的代价很大，但是只有在第一次创建topic或者queue的时候发生。仍然可以接受
+                }
+            }
+        }
+        return fileLogger;
+    }
     @Override
     public void send(Message message, KeyValue properties) {
         DefaultBytesMessage bytesMessage = (DefaultBytesMessage) message;
@@ -122,12 +131,23 @@ public class DefaultProducer implements Producer {
 
     @Override
     public void flush() {
-        try {
-            out.write(byteBuffer.array(),0,byteBuffer.position());
-            out.flush();
-            out.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        isStart = false;
+        int  aaa = producerNumber.decrementAndGet();
+        System.out.println("stop and flush Producer" + aaa);
+        if (aaa == 0){
+            synchronized (fileMap){
+                //保险起见，还是synchronize一下。
+                if (producerNumber.get()!=0){
+                    return;
+                }
+                Iterator iter = fileMap.entrySet().iterator();
+                while (iter.hasNext()){
+                    Map.Entry entry = (Map.Entry) iter.next();
+                    AsyncLogging val = (AsyncLogging) entry.getValue();
+                    val.signalFlush();
+                }
+                //fileMap = new HashMap();
+            }
         }
     }
 }
