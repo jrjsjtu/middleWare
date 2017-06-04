@@ -16,7 +16,7 @@ import java.util.zip.Deflater;
 
 public class DefaultProducer implements Producer {
     private MessageFactory messageFactory = new DefaultMessageFactory();
-    public static final String magicNumber = "5120519123";
+    public static final String magicNumber = "116033910067";
 
     private static AtomicInteger producerNum= new AtomicInteger(0);
     FileOutputStream out;
@@ -66,7 +66,7 @@ public class DefaultProducer implements Producer {
     public KeyValue properties() {
         return properties;
     }
-    private static final int blockingSize = 1024*1024/2;
+    private static final int blockingSize = 1024*1024*2;
     ByteBuffer byteBuffer = ByteBuffer.allocate(blockingSize);
     byte[] tmp;
     byte[] zipBuffer =  new byte[blockingSize];
