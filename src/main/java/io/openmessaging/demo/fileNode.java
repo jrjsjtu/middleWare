@@ -3,6 +3,7 @@ package io.openmessaging.demo;
 import io.openmessaging.BytesMessage;
 import io.openmessaging.MessageHeader;
 
+import java.io.File;
 import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -21,17 +22,23 @@ public class fileNode extends Thread{
     long fileSize;
     long curPostion = 0;
 
+    String fileName;
 
     RandomAccessFile raf = null;
     Inflater decompresser = new Inflater();
     byte[] byte4message = new byte[2*1024*1024];//为了应对大的message提前开好512K的缓存
-    byte[] byte4zip = new byte[1024*1024];
+    byte[] byte4zip = new byte[2*1024*1024];
     byte[] byte4int = new byte[4];
 
     public fileNode(String fileName){
+        this.fileName =fileName;
         try {
+            File fileExist = new File(fileName);
             raf = new RandomAccessFile (fileName, "r");
             fileSize = raf.length();
+            if (fileExist.exists()){
+                System.out.println("file exists and len is " + fileSize);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -179,6 +186,7 @@ public class fileNode extends Thread{
                 }
             }
         }
+        System.out.println("one thread end " + fileName);
         if (DefaultPullConsumer.remainThread.decrementAndGet() == 0){
             OutputMesssage endMessage = new OutputMesssage(new byte[1123]);
             for (DefaultPullConsumer pullConsumer:DefaultPullConsumer.notifyList){

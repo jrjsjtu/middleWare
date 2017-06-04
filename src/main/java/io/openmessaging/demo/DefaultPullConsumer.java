@@ -116,9 +116,9 @@ public class DefaultPullConsumer implements PullConsumer {
         }
         if (consumerIndex == 10){
             for (int i=0;i<10;i++){
+                System.out.println("start read" + i);
                 new fileNode(parent+i+DefaultProducer.magicNumber).start();
             }
-            interestList.size();
         }
     }
 }
