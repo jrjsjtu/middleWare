@@ -13,7 +13,7 @@ public class DefaultPullConsumer implements PullConsumer {
     private KeyValue properties;
     String parent;
     private int consumerIndex;
-    public BlockingQueue<BytesMessage> msgQueue = new LinkedBlockingDeque(1000);
+    public BlockingQueue<BytesMessage> msgQueue = new LinkedBlockingDeque(1500);
 
     static public HashMap<String,ArrayList<DefaultPullConsumer>> interestList;
     static public ArrayList<DefaultPullConsumer> notifyList = new ArrayList<>();

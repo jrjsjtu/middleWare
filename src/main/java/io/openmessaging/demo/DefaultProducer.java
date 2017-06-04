@@ -66,7 +66,7 @@ public class DefaultProducer implements Producer {
     public KeyValue properties() {
         return properties;
     }
-    private static final int blockingSize = 1024*1024*2;
+    private static final int blockingSize = 1024*1024/2;
     ByteBuffer byteBuffer = ByteBuffer.allocate(blockingSize);
     byte[] tmp;
     byte[] zipBuffer =  new byte[blockingSize];
