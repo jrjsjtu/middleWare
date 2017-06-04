@@ -65,7 +65,7 @@ public class fileNode extends Thread{
         }
         return true;
     }
-    byte[] infoBuffer = new byte[128];
+
     private BytesMessage getMessageList(){
         OutputMesssage message = null;
         if(curByteBuffer.remaining()== 0) {
@@ -79,34 +79,45 @@ public class fileNode extends Thread{
         message = new OutputMesssage(body);
 
         while (true){
-            tmp = curByteBuffer.getChar();
+            try{
+                tmp = curByteBuffer.getChar();
+            }catch (Exception e){
+                System.out.println(len);
+                e.printStackTrace();
+            }
+
             if (tmp == ' ') {break;}
             switch (tmp){
                 case '1':
                     headerInt = curByteBuffer.getInt();
                     strlen = curByteBuffer.getInt();
-                    curByteBuffer.get(infoBuffer,0,strlen);
-                    key = new String(infoBuffer,0,strlen);
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
                     message.putHeaders(key,headerInt);break;
                 case '2':
                     headerLong = curByteBuffer.getLong();
                     strlen = curByteBuffer.getInt();
-                    curByteBuffer.get(infoBuffer,0,strlen);
-                    key = new String(infoBuffer,0,strlen);
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
                     message.putHeaders(key,headerLong);break;
                 case '3':
                     headerDouble = curByteBuffer.getDouble();
                     strlen = curByteBuffer.getInt();
-                    curByteBuffer.get(infoBuffer,0,strlen);
-                    key = new String(infoBuffer,0,strlen);
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
                     message.putHeaders(key,headerDouble);break;
                 case '4':
                     strlen = curByteBuffer.getInt();
-                    curByteBuffer.get(infoBuffer,0,strlen);
-                    valuestr = new String(infoBuffer,0,strlen);
+                    tmpvalue = new byte[strlen];
+                    curByteBuffer.get(tmpvalue);
+                    valuestr = new String(tmpvalue);
                     strlen = curByteBuffer.getInt();
-                    curByteBuffer.get(infoBuffer,0,strlen);
-                    key = new String(infoBuffer,0,strlen);
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
                     message.putHeaders(key,valuestr);break;
             }
         }
@@ -118,28 +129,33 @@ public class fileNode extends Thread{
                 case '1':
                     headerInt = curByteBuffer.getInt();
                     strlen = curByteBuffer.getInt();
-                    curByteBuffer.get(infoBuffer,0,strlen);
-                    key = new String(infoBuffer,0,strlen);
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
                     message.putProperties(key,headerInt);break;
                 case '2':
                     headerLong = curByteBuffer.getLong();
                     strlen = curByteBuffer.getInt();
-                    curByteBuffer.get(infoBuffer,0,strlen);
-                    key = new String(infoBuffer,0,strlen);
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
                     message.putProperties(key,headerLong);break;
                 case '3':
                     headerDouble = curByteBuffer.getDouble();
                     strlen = curByteBuffer.getInt();
-                    curByteBuffer.get(infoBuffer,0,strlen);
-                    key = new String(infoBuffer,0,strlen);
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
                     message.putProperties(key,headerDouble);break;
                 case '4':
                     strlen = curByteBuffer.getInt();
-                    curByteBuffer.get(infoBuffer,0,strlen);
-                    valuestr = new String(infoBuffer,0,strlen);
+                    tmpvalue = new byte[strlen];
+                    curByteBuffer.get(tmpvalue);
+                    valuestr = new String(tmpvalue);
                     strlen = curByteBuffer.getInt();
-                    curByteBuffer.get(infoBuffer,0,strlen);
-                    key = new String(infoBuffer,0,strlen);
+                    tmpkey = new byte[strlen];
+                    curByteBuffer.get(tmpkey);
+                    key = new String(tmpkey);
                     message.putProperties(key,valuestr);break;
             }
         }
