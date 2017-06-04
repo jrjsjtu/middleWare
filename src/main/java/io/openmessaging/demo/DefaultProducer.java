@@ -69,7 +69,7 @@ public class DefaultProducer implements Producer {
     private static final int blockingSize = 1024*1024*2;
     ByteBuffer byteBuffer = ByteBuffer.allocate(blockingSize);
     byte[] tmp;
-    byte[] zipBuffer =  new byte[blockingSize/4];
+    byte[] zipBuffer =  new byte[blockingSize];
     @Override
     public void send(Message message) {
         tmp = ((DefaultBytesMessage)message).getByteArray();
