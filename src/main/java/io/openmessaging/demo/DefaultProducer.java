@@ -16,7 +16,7 @@ import java.util.zip.Deflater;
 
 public class DefaultProducer implements Producer {
     private MessageFactory messageFactory = new DefaultMessageFactory();
-    public static final String magicNumber = "223243jj4";
+    public static final String magicNumber = "2232ggjj4";
 
     private static AtomicInteger producerNum= new AtomicInteger(0);
     FileOutputStream out;
